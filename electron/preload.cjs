@@ -15,5 +15,7 @@ contextBridge.exposeInMainWorld('kinezioDesktop', {
   listFiles: (dirPath) => ipcRenderer.invoke('kinezio:list-files', dirPath),
   openFolder: (dirPath) => ipcRenderer.invoke('kinezio:open-folder', dirPath),
   openExternal: (url) => ipcRenderer.invoke('kinezio:open-external', url),
+  requestMicrophoneAccess: () => ipcRenderer.invoke('kinezio:request-microphone'),
+  openMicrophoneSettings: () => ipcRenderer.invoke('kinezio:open-mic-settings'),
   checkForUpdates: (feedUrl) => ipcRenderer.invoke('kinezio:check-updates', feedUrl),
 });

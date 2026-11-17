@@ -6,7 +6,7 @@ export const NEURO_PROFILES: NeuroPhysiologyProfile[] = [
     name: 'Мышечные веретёна (Ia/II) и сухожильные органы Гольджи (Ib)',
     latinOrSubtitle: 'Проприоцепторы тонуса, длины и натяжения мышцы в ММТ',
     category: 'Нервные окончания (рецепторы)',
-    imageSrc: '/anatomy/learning/muscle_spindle.png',
+    imageSrc: './anatomy/learning/muscle_spindle.png',
     imageAttribution: 'Wikimedia Commons · CC BY 4.0',
     physiologicalMechanism:
       'Мышечные веретёна расположены параллельно экстрафузальным волокнам в брюшке мышцы и фиксируют скорость/величину растяжения (γ-петля управляет базовым тонусом). Сухожильные органы Гольджи (Ib) лежат последовательно в зоне перехода мышцы в сухожилие и защищают ткань от разрыва, тормозя α-мотонейрон при избыточном напряжении.',
@@ -48,7 +48,7 @@ export const NEURO_PROFILES: NeuroPhysiologyProfile[] = [
     name: 'Суставные механорецепторы (Фатера–Пачини, Руффини) и ноцицепторы',
     latinOrSubtitle: 'Капсульные рецепторы положения, вибрации, связок и боли',
     category: 'Нервные окончания (рецепторы)',
-    imageSrc: '/anatomy/learning/sarcomere.svg',
+    imageSrc: './anatomy/learning/sarcomere.svg',
     imageAttribution: 'Wikimedia Commons · CC BY-SA 3.0',
     physiologicalMechanism:
       'Тельца Фатера–Пачини (быстро адаптирующиеся) регистрируют резкое изменение давления, вибрацию и ускорение в суставах; тельца Руффини (медленно адаптирующиеся) отслеживают статический угол сустава и натяжение связок; свободные нервные окончания (C- и Aδ-ноцицепторы) реагируют на микротравму, ишемию и медиаторы воспаления (брадикинин, гистамин).',
@@ -90,7 +90,7 @@ export const NEURO_PROFILES: NeuroPhysiologyProfile[] = [
     name: 'Соматическая нервная система (α/γ-мотонейроны, корешки, туннели)',
     latinOrSubtitle: 'Systema nervosum somaticum · Произвольный и рефлекторный моторный путь',
     category: 'Отделы нервной системы',
-    imageSrc: '/anatomy/neuro/neuromuscular_junction.png',
+    imageSrc: './anatomy/neuro/neuromuscular_junction.png',
     imageAttribution: 'Wikimedia Commons · CC BY 4.0',
     physiologicalMechanism:
       'Включает двигательную кору, пирамидные тракты, передние рога спинного мозга, спинномозговые корешки (миотомы) и периферические нервы с нервно-мышечным синапсом (ацетилхолин → никотиновые рецепторы сарколеммы). Обеспечивает точное, избирательное сокращение скелетных мышц.',
@@ -132,7 +132,7 @@ export const NEURO_PROFILES: NeuroPhysiologyProfile[] = [
     name: 'Симпатический отдел вегетативной НС (Th1–L2 · стресс и гиперфасилитация)',
     latinOrSubtitle: 'Pars sympathica · Реакция «бей или беги» и тонический перегруз',
     category: 'Отделы нервной системы',
-    imageSrc: '/anatomy/learning/autonomic_ns.png',
+    imageSrc: './anatomy/learning/autonomic_ns.png',
     imageAttribution: 'Wikimedia Commons · CC0 Public Domain',
     physiologicalMechanism:
       'Преганглионарные нейроны расположены в боковых рогах спинного мозга Th1–L2 (тораколюмбальный отдел); паравертебральные симпатические ганглии проходят вдоль головок рёбер и ножек диафрагмы. Выброс адреналина/норадреналина сужает сосуды ЖКТ и повышает возбудимость γ-мотонейронов скелетной мускулатуры.',
@@ -174,7 +174,7 @@ export const NEURO_PROFILES: NeuroPhysiologyProfile[] = [
     name: 'Парасимпатический отдел ВНС (N. vagus X и S2–S4 · висцеральный тонус)',
     latinOrSubtitle: 'Pars parasympathica · Краниосакральная система восстановления и ЖКТ',
     category: 'Отделы нервной системы',
-    imageSrc: '/anatomy/learning/vagus_nerve.jpg',
+    imageSrc: './anatomy/learning/vagus_nerve.jpg',
     imageAttribution: 'Wikimedia Commons · CC BY-SA 4.0',
     physiologicalMechanism:
       'Ядра расположены в стволе мозга (III, VII, IX, и главный нерв X — блуждающий) и крестцовом отделе S2–S4. Блуждающий нерв выходит через яремное отверстие (между затылочной и височной костями!), проходит в фасциальном футляре шеи мимо пищевода через грудобрюшную диафрагму ко всем органам груди и живота.',
@@ -216,7 +216,7 @@ export const NEURO_PROFILES: NeuroPhysiologyProfile[] = [
     name: 'Влияние положения тела при ММТ: Лёжа · Сидя · Стоя',
     latinOrSubtitle: 'Постурально-гравитационная диагностика в прикладной кинезиологии',
     category: 'Положения при ММТ (стоя / сидя / лёжа)',
-    imageSrc: '/anatomy/muscles_front_back.svg',
+    imageSrc: './anatomy/muscles_front_back.svg',
     imageAttribution: 'Wikimedia Commons · CC BY-SA',
     physiologicalMechanism:
       'Изменение положения тела меняет распределение гравитационного вектора, внутридисковое давление и включаемые в работу сенсорные входы (лёжа — минимум постуральных цепей; сидя — включается таз, поясница, ВНЧС и вестибулярный аппарат; стоя — добавляются проприоцепция стоп и полные фасциальные поезда ПЗЛ/ЛЛ/ГФЛ).',
@@ -258,7 +258,7 @@ export const NEURO_PROFILES: NeuroPhysiologyProfile[] = [
     name: 'Диагностика нейрологической дезорганизации (Переключение · К-27)',
     latinOrSubtitle: 'Neurologic Disorganization (Switching) · Сбой межполушарной синхронизации',
     category: 'Диагностика нарушений НС',
-    imageSrc: '/anatomy/acupuncture_body_chart.jpg',
+    imageSrc: './anatomy/acupuncture_body_chart.jpg',
     imageAttribution: 'Wikimedia Commons · Public Domain',
     physiologicalMechanism:
       'В состоянии острого стресса, электромагнитной/химической интоксикации или дисбаланса передне- и заднесрединных сосудов (CV/GV) в ЦНС возникает инверсия сигналов («переключение»): нормальные провокации дают ложно-положительные или противоположные ответы, правая и левая стороны тела теряют перекрёстную шаговую координацию.',
@@ -300,7 +300,7 @@ export const NEURO_PROFILES: NeuroPhysiologyProfile[] = [
     name: 'Синаптическое истощение и скорость срыва сокращения по таймеру',
     latinOrSubtitle: 'Диагностика энергетического и медиаторного дефицита синапса в ММТ',
     category: 'Диагностика нарушений НС',
-    imageSrc: '/anatomy/neuro/synapse_servier.png',
+    imageSrc: './anatomy/neuro/synapse_servier.png',
     imageAttribution: 'Servier Medical Art / Wikimedia Commons · CC BY-SA 3.0',
     physiologicalMechanism:
       'Поддержание изометрического удержания в ММТ требует непрерывного синтеза и выброса ацетилхолина в нервно-мышечном синапсе, достаточного количества кальция, магния и митохондриального АТФ в мышечном волокне, а также стабильной афферентации от ЦНС.',

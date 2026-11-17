@@ -54,7 +54,7 @@ const PLATES: Record<AtlasPlateId, PlateMeta> = {
   muscles: {
     id: 'muscles',
     label: 'Мышцы и цепи',
-    src: '/anatomy/muscles_front_back.svg',
+    src: './anatomy/muscles_front_back.svg',
     width: 1000,
     height: 871,
     sourceAttribution: 'Wikimedia Commons · Muscles front and back (CC BY-SA)',
@@ -62,7 +62,7 @@ const PLATES: Record<AtlasPlateId, PlateMeta> = {
   head: {
     id: 'head',
     label: 'Голова и ВНЧС',
-    src: '/anatomy/head_neck_gray378.png',
+    src: './anatomy/head_neck_gray378.png',
     width: 620,
     height: 700,
     sourceAttribution: 'Henry Gray, Anatomy of the Human Body · Plate 378 (Public Domain)',
@@ -70,7 +70,7 @@ const PLATES: Record<AtlasPlateId, PlateMeta> = {
   neck: {
     id: 'neck',
     label: 'Шейный отдел',
-    src: '/anatomy/neck_gray385.png',
+    src: './anatomy/neck_gray385.png',
     width: 553,
     height: 593,
     sourceAttribution: 'Henry Gray, Anatomy of the Human Body · Plate 385 (Public Domain)',
@@ -78,7 +78,7 @@ const PLATES: Record<AtlasPlateId, PlateMeta> = {
   organs: {
     id: 'organs',
     label: 'Внутренние органы',
-    src: '/anatomy/internal_organs.svg',
+    src: './anatomy/internal_organs.svg',
     width: 1363,
     height: 1212,
     sourceAttribution: 'Mikael Häggström · Internal organs, Wikimedia Commons (CC0)',
@@ -86,7 +86,7 @@ const PLATES: Record<AtlasPlateId, PlateMeta> = {
   diaphragm: {
     id: 'diaphragm',
     label: 'Диафрагмы',
-    src: '/anatomy/diaphragm.png',
+    src: './anatomy/diaphragm.png',
     width: 600,
     height: 600,
     sourceAttribution: 'Wikimedia Commons · Human diaphragm (CC BY-SA)',

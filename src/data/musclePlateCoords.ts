@@ -1,7 +1,7 @@
 import { AnatomicalZoneId, Muscle, PainBodyView } from '../types/atlas';
 
 export const BODY_SILHOUETTE_PLATE = {
-  src: '/anatomy/muscles_front_back.svg',
+  src: './anatomy/muscles_front_back.svg',
   width: 1000,
   height: 871,
   anteriorMidX: 250,

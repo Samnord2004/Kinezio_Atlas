@@ -69,6 +69,7 @@ import {
   Printer,
   RotateCcw,
   Save,
+  Settings,
   Square,
   Users,
 } from 'lucide-react';
@@ -213,9 +214,14 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
   const [currentVisitId, setCurrentVisitId] = useState<string | undefined>(undefined);
   const [saveVisitFeedback, setSaveVisitFeedback] = useState<string | null>(null);
 
-  // Web Speech API voice dictation state
+  // Web Speech API + Local Microphone Recording state
   const [voiceTarget, setVoiceTarget] = useState<VoiceTargetMode>('auto');
   const [isRecording, setIsRecording] = useState(false);
+  const [isAudioRecording, setIsAudioRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [audioNoteUrl, setAudioNoteUrl] = useState<string | null>(null);
+  const [micPermissionDenied, setMicPermissionDenied] = useState(false);
+  const [electronDictationHint, setElectronDictationHint] = useState(false);
   const [dictationText, setDictationText] = useState('');
   const [interimTranscript, setInterimTranscript] = useState('');
   const [voiceStatusMsg, setVoiceStatusMsg] = useState<string | null>(null);
@@ -224,9 +230,20 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
   const [showVoiceEditor, setShowVoiceEditor] = useState(false);
 
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const audioNoteUrlRef = useRef<string | null>(null);
+  const dictationInputRef = useRef<HTMLInputElement | null>(null);
   const dictationTextRef = useRef<string>('');
   const lastAppliedSignatureRef = useRef<string>('');
-  const voiceSupported = useMemo(() => Boolean(getSpeechRecognitionCtor()), []);
+  const voiceSupported = useMemo(
+    () =>
+      Boolean(getSpeechRecognitionCtor()) ||
+      (typeof navigator !== 'undefined' && Boolean(navigator.mediaDevices?.getUserMedia)),
+    []
+  );
 
   const activePatientObj = useMemo(
     () => patients.find((p) => p.id === activePatientId) ?? null,
@@ -573,11 +590,115 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
       } catch {
         // Ignore cleanup errors
       }
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+      try {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+          mediaRecorderRef.current.stop();
+        }
+      } catch {
+        // ignore
+      }
+      mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+      if (audioNoteUrlRef.current) {
+        URL.revokeObjectURL(audioNoteUrlRef.current);
+      }
     };
   }, []);
 
-  const toggleVoiceDictation = useCallback(() => {
+  const stopLocalAudioCapture = useCallback(() => {
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+    try {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      } else {
+        mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+        mediaStreamRef.current = null;
+      }
+    } catch {
+      mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+      mediaStreamRef.current = null;
+    }
+    setIsAudioRecording(false);
+  }, []);
+
+  const startLocalAudioCapture = useCallback(async (fromElectronMode: boolean) => {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      setShowVoiceEditor(true);
+      setVoiceErrorMsg(
+        'Доступ к микрофону недоступен в этом контексте. Откройте приложение через http://localhost:3000 или HTTPS, либо введите жалобы в поле ниже.'
+      );
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      audioChunksRef.current = [];
+
+      const mimeType =
+        typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported?.('audio/webm')
+          ? 'audio/webm'
+          : '';
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+
+      recorder.ondataavailable = (ev) => {
+        if (ev.data && ev.data.size > 0) {
+          audioChunksRef.current.push(ev.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        mediaStreamRef.current = null;
+        if (audioChunksRef.current.length > 0) {
+          const blob = new Blob(audioChunksRef.current, {
+            type: recorder.mimeType || 'audio/webm',
+          });
+          if (audioNoteUrlRef.current) {
+            URL.revokeObjectURL(audioNoteUrlRef.current);
+          }
+          const url = URL.createObjectURL(blob);
+          audioNoteUrlRef.current = url;
+          setAudioNoteUrl(url);
+        }
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start(250);
+      setRecordingSeconds(0);
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingSeconds((s) => s + 1);
+      }, 1000);
+
+      setIsAudioRecording(true);
+      setShowVoiceEditor(true);
+      setVoiceErrorMsg(null);
+      setElectronDictationHint(fromElectronMode);
+
+      setTimeout(() => {
+        dictationInputRef.current?.focus();
+      }, 80);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.toLowerCase().includes('denied') || msg.toLowerCase().includes('permission')) {
+        setMicPermissionDenied(true);
+        setVoiceErrorMsg(
+          'Доступ к микрофону запрещён. Разрешите доступ к микрофону в настройках системы или браузера.'
+        );
+      } else {
+        setVoiceErrorMsg(`Не удалось включить микрофон (${msg || 'устройство не найдено'}).`);
+      }
+    }
+  }, []);
+
+  const toggleVoiceDictation = useCallback(async () => {
     setVoiceErrorMsg(null);
+    setMicPermissionDenied(false);
 
     if (isRecording && recognitionRef.current) {
       try {
@@ -588,18 +709,55 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
       return;
     }
 
-    const SpeechCtor = getSpeechRecognitionCtor();
-    if (!SpeechCtor) {
+    if (isAudioRecording) {
+      stopLocalAudioCapture();
+      return;
+    }
+
+    if (
+      typeof window !== 'undefined' &&
+      !window.isSecureContext &&
+      !window.kinezioDesktop?.isElectron
+    ) {
       setShowVoiceEditor(true);
       setVoiceErrorMsg(
-        'Web Speech API недоступен в этом браузере (используйте Chrome/Edge/Safari). Введите или вставьте текст жалобы ниже и нажмите «Заполнить поля».'
+        'Браузер блокирует микрофон на незащищённом HTTP-адресе. Для локальной работы откройте http://localhost:3000 или подключите HTTPS-туннель (Cloudflare).'
       );
+      return;
+    }
+
+    // Request native macOS TCC microphone permission when running in Electron desktop app
+    if (typeof window !== 'undefined' && window.kinezioDesktop?.requestMicrophoneAccess) {
+      try {
+        const perm = await window.kinezioDesktop.requestMicrophoneAccess();
+        if (!perm.granted) {
+          setShowVoiceEditor(true);
+          setMicPermissionDenied(true);
+          setVoiceErrorMsg(
+            'macOS заблокировала доступ к микрофону для «КинезиоАтлас». Включите микрофон в Системных настройках → Конфиденциальность и безопасность → Микрофон.'
+          );
+          return;
+        }
+      } catch {
+        // Continue to getUserMedia / Web Speech check
+      }
+
+      // In Electron Chromium builds, Web Speech API lacks Google Speech API keys,
+      // so activate local hardware microphone recording + Apple system Dictation directly.
+      await startLocalAudioCapture(true);
+      return;
+    }
+
+    const SpeechCtor = getSpeechRecognitionCtor();
+    if (!SpeechCtor) {
+      await startLocalAudioCapture(false);
       return;
     }
 
     setShowVoiceEditor(true);
     setVoiceStatusMsg(null);
     setInterimTranscript('');
+    setElectronDictationHint(false);
 
     const recognition = new SpeechCtor();
     recognition.lang = 'ru-RU';
@@ -638,9 +796,13 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
       setIsRecording(false);
       setInterimTranscript('');
       if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        setMicPermissionDenied(true);
         setVoiceErrorMsg(
-          'Доступ к микрофону запрещён. Разрешите использование микрофона в настройках браузера.'
+          'Доступ к микрофону или облачному распознаванию запрещён. Разрешите микрофон в настройках браузера/системы.'
         );
+      } else if (event.error === 'network') {
+        // Fallback smoothly to hardware microphone recording if speech cloud is unreachable/offline
+        void startLocalAudioCapture(false);
       } else if (event.error === 'no-speech') {
         setVoiceErrorMsg('Речь не распознана — нажмите на микрофон ещё раз и продиктуйте жалобу.');
       } else if (event.error === 'audio-capture') {
@@ -665,9 +827,9 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
       recognition.start();
     } catch {
       setIsRecording(false);
-      setVoiceErrorMsg('Не удалось запустить микрофон. Попробуйте ещё раз.');
+      void startLocalAudioCapture(false);
     }
-  }, [isRecording, voiceTarget, applyParsedVoiceResult]);
+  }, [isRecording, isAudioRecording, voiceTarget, applyParsedVoiceResult, startLocalAudioCapture, stopLocalAudioCapture]);
 
   const handleResetSession = () => {
     setCurrentVisitId(undefined);
@@ -956,23 +1118,30 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
               />
               <button
                 type="button"
-                onClick={toggleVoiceDictation}
+                onClick={() => void toggleVoiceDictation()}
                 title={
-                  isRecording
-                    ? 'Остановить голосовую запись и заполнить поля'
-                    : 'Надиктовать жалобы пациента через микрофон (Web Speech API)'
+                  isRecording || isAudioRecording
+                    ? 'Остановить запись микрофона'
+                    : 'Включить микрофон (голосовая диктовка / аудиозапись)'
                 }
-                aria-label={isRecording ? 'Остановить запись микрофона' : 'Надиктовать жалобы'}
+                aria-label={isRecording || isAudioRecording ? 'Остановить запись микрофона' : 'Надиктовать жалобы'}
                 className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                  isRecording
+                  isRecording || isAudioRecording
                     ? 'bg-rose-600 hover:bg-rose-700 text-white'
                     : 'bg-blue-700 hover:bg-blue-800 text-white'
                 }`}
               >
-                {isRecording ? (
+                {isRecording || isAudioRecording ? (
                   <>
                     <Square className="w-3.5 h-3.5" />
-                    <span>Стоп</span>
+                    <span>
+                      Стоп
+                      {isAudioRecording
+                        ? ` (${String(Math.floor(recordingSeconds / 60)).padStart(2, '0')}:${String(
+                            recordingSeconds % 60
+                          ).padStart(2, '0')})`
+                        : ''}
+                    </span>
                   </>
                 ) : (
                   <>
@@ -1007,18 +1176,24 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
             </div>
           </div>
 
-          {/* Voice Dictation Console (Web Speech API -> Pain Map & Complaint Timeline) */}
+          {/* Voice Dictation Console (Web Speech API + Local Microphone Recording) */}
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2.5 text-xs">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold text-slate-800 inline-flex items-center gap-1.5">
                   <Mic className="w-3.5 h-3.5 text-blue-700" />
-                  Голосовая диктовка жалоб (Web Speech API)
+                  Голосовая диктовка и аудиозапись жалоб
                 </span>
                 {isRecording && (
                   <span className="inline-flex items-center gap-1.5 text-rose-700 font-semibold font-mono text-[11px]">
-                    <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse inline-block" />
-                    Идёт запись речи (ru-RU)...
+                    Идёт распознавание речи (ru-RU)...
+                  </span>
+                )}
+                {isAudioRecording && (
+                  <span className="inline-flex items-center gap-1.5 text-rose-700 font-semibold font-mono text-[11px] tabular-nums">
+                    Микрофон активен — запись{' '}
+                    {String(Math.floor(recordingSeconds / 60)).padStart(2, '0')}:
+                    {String(recordingSeconds % 60).padStart(2, '0')}
                   </span>
                 )}
               </div>
@@ -1058,10 +1233,20 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
               </div>
             </div>
 
-            {(showVoiceEditor || isRecording || dictationText.length > 0 || Boolean(interimTranscript)) && (
+            {(showVoiceEditor || isRecording || isAudioRecording || dictationText.length > 0 || Boolean(interimTranscript) || Boolean(audioNoteUrl)) && (
               <div className="space-y-2">
+                {electronDictationHint && (
+                  <div className="px-3 py-2 bg-blue-50/80 border border-blue-200 rounded-md text-[11px] text-blue-950 leading-relaxed">
+                    <strong>Микрофон macOS подключён (идёт аудиозапись приёма).</strong> Для
+                    автоматического перевода речи в текст в офлайн-приложении macOS поставьте курсор
+                    в поле ниже и нажмите дважды клавишу <strong>Fn</strong> (или меню{' '}
+                    <strong>Правка → Начать диктовку</strong>) — затем нажмите «Заполнить поля».
+                  </div>
+                )}
+
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
+                    ref={dictationInputRef}
                     type="text"
                     value={dictationText}
                     onChange={(e) => {
@@ -1104,11 +1289,50 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
                     Распознаётся: {interimTranscript}
                   </div>
                 )}
+
+                {audioNoteUrl && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-white border border-slate-200 rounded-md">
+                    <audio controls src={audioNoteUrl} className="h-8 flex-1 min-w-[200px]" />
+                    <div className="flex items-center gap-2 shrink-0">
+                      <a
+                        href={audioNoteUrl}
+                        download={`priem-${visitDate || 'audio'}.webm`}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded"
+                      >
+                        <FileDown className="w-3 h-3" />
+                        <span>Скачать аудио</span>
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (audioNoteUrlRef.current) URL.revokeObjectURL(audioNoteUrlRef.current);
+                          audioNoteUrlRef.current = null;
+                          setAudioNoteUrl(null);
+                        }}
+                        className="px-2 py-1 text-[11px] text-slate-500 hover:text-rose-700 cursor-pointer"
+                      >
+                        Удалить
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
             {voiceErrorMsg && (
-              <div className="text-[11px] text-rose-700 font-medium">{voiceErrorMsg}</div>
+              <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-rose-700 font-medium">
+                <span>{voiceErrorMsg}</span>
+                {micPermissionDenied && window.kinezioDesktop?.openMicrophoneSettings && (
+                  <button
+                    type="button"
+                    onClick={() => void window.kinezioDesktop?.openMicrophoneSettings()}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-rose-900 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded cursor-pointer whitespace-nowrap"
+                  >
+                    <Settings className="w-3 h-3" />
+                    <span>Открыть настройки микрофона macOS</span>
+                  </button>
+                )}
+              </div>
             )}
 
             {voiceStatusMsg && (

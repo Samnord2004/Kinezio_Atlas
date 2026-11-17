@@ -8,8 +8,8 @@ export function getCurrentAppVersion(): string {
 }
 
 export function getUpdateFeedUrl(): string {
-  if (typeof localStorage === 'undefined') return '/version.json';
-  return localStorage.getItem(LS_UPDATE_FEED_KEY) || '/version.json';
+  if (typeof localStorage === 'undefined') return './version.json';
+  return localStorage.getItem(LS_UPDATE_FEED_KEY) || './version.json';
 }
 
 export function setUpdateFeedUrl(url: string): void {
@@ -106,7 +106,7 @@ export async function applyServiceWorkerUpdate(): Promise<boolean> {
 
 export async function checkForAppUpdates(customFeedUrl?: string): Promise<UpdateCheckResult> {
   const currentVersion = getCurrentAppVersion();
-  const feedUrl = (customFeedUrl ?? getUpdateFeedUrl()).trim() || '/version.json';
+  const feedUrl = (customFeedUrl ?? getUpdateFeedUrl()).trim() || './version.json';
   const checkedAt = new Date().toISOString();
 
   // 1. Check Service Worker update in browser/PWA mode
@@ -123,8 +123,8 @@ export async function checkForAppUpdates(customFeedUrl?: string): Promise<Update
     return res;
   }
 
-  // 2. If running inside Electron desktop app, ask Electron main process first
-  if (typeof window !== 'undefined' && window.kinezioDesktop && !feedUrl.startsWith('/')) {
+  // 2. If running inside Electron desktop app, ask Electron main process first for remote HTTP(S) feeds
+  if (typeof window !== 'undefined' && window.kinezioDesktop && /^https?:\/\//i.test(feedUrl)) {
     try {
       const electronRes = await window.kinezioDesktop.checkForUpdates(feedUrl);
       if (electronRes.ok && electronRes.manifest?.version) {

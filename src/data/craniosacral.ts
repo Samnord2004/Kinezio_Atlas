@@ -105,7 +105,7 @@ export const CRANIOSACRAL_PROFILES: CraniosacralProfile[] = [
     name: 'Декомпрессия яремного отверстия, затылочно-сосцевидного шва и вагуса (CN X)',
     latinOrSubtitle: 'Foramen jugulare Decompression · Освобождение блуждающего нерва и венозного оттока',
     category: 'Мембраны, швы и ВНЧС',
-    imageSrc: '/anatomy/learning/vagus_nerve.jpg',
+    imageSrc: './anatomy/learning/vagus_nerve.jpg',
     imageAttribution: 'Wikimedia Commons · CC BY-SA 4.0',
     anatomicalFocus:
       'Затылочно-сосцевидный шов (sutura occipitomastoidea) между височной и затылочной костями, через который проходит яремное отверстие (внутренняя яремная вена — 95% венозного оттока мозга + нервы IX, X вагус, XI добавочный).',
@@ -153,7 +153,7 @@ export const CRANIOSACRAL_PROFILES: CraniosacralProfile[] = [
     name: 'Балансировка височных костей, намёта мозжечка и ВНЧС (при тиннитусе и дисфункции челюсти)',
     latinOrSubtitle: 'Os temporale · Tentorium cerebelli · Устранение височного скручивания',
     category: 'Мембраны, швы и ВНЧС',
-    imageSrc: '/anatomy/mmt/openstax_head_chewing.png',
+    imageSrc: './anatomy/mmt/openstax_head_chewing.png',
     imageAttribution: 'OpenStax Anatomy & Physiology 2e · CC BY 4.0',
     anatomicalFocus:
       'Парные височные кости (в них расположен слуховой проход, вестибулярный лабиринт и суставная ямка ВНЧС) и намёт мозжечка (горизонтальная дубликатура твёрдой мозговой оболочки, натянутая между пирамидами височных костей и затылком).',

@@ -10,7 +10,7 @@ export const DIAGNOSTIC_TESTS: DiagnosticTestProfile[] = [
     latinOrAlias: 'De Kleyn–Nieuwenhuyse Test · Скрининг позвоночной артерии',
     category: 'Ортопедические и сосудистые допуски',
     targetRegion: 'Краниовертебральный переход (C0–C2) и позвоночные артерии',
-    imageSrc: '/anatomy/mmt/openstax_neck_lateral.png',
+    imageSrc: './anatomy/mmt/openstax_neck_lateral.png',
     imageAttribution: 'OpenStax Anatomy & Physiology 2e · CC BY 4.0',
     clinicalPurpose:
       'Обязательный тест сосудистой безопасности перед любыми манипуляциями, мобилизациями и трастами (HVLA) в шейном отделе позвоночника. Позволяет выявить вертебробазилярную недостаточность (компрессию позвоночной артерии в костном канале поперечных отростков C1–C2).',
@@ -54,7 +54,7 @@ export const DIAGNOSTIC_TESTS: DiagnosticTestProfile[] = [
     latinOrAlias: 'Sharp–Purser Test · Стабильность поперечной связки атланта C1–C2',
     category: 'Ортопедические и сосудистые допуски',
     targetRegion: 'Атланто-аксиальный сустав (C1–C2) и поперечная связка атланта',
-    imageSrc: '/anatomy/neck_gray385.png',
+    imageSrc: './anatomy/neck_gray385.png',
     imageAttribution: 'Henry Gray Anatomy · Public Domain',
     clinicalPurpose:
       'Оценка целостности поперечной связки атланта (lig. transversum atlantis), удерживающей зуб осевого позвонка (C2) в контакте с передней дугой атланта (C1). Критически важен при подозрении на краниовертебральную нестабильность, при ревматоидном артрите или после хлыстовой травмы.',
@@ -140,7 +140,7 @@ export const DIAGNOSTIC_TESTS: DiagnosticTestProfile[] = [
     latinOrAlias: 'Chapman’s Neurolymphatic Reflexes · Диагностика и стимуляция лимфооттока органов',
     category: 'Кинезиологические рефлексы (Чапмен / Беннетт)',
     targetRegion: 'Передняя грудная/брюшная стенка (межреберья, пупочная зона) и задняя паравертебральная линия',
-    imageSrc: '/anatomy/learning/autonomic_ns.png',
+    imageSrc: './anatomy/learning/autonomic_ns.png',
     imageAttribution: 'Wikimedia Commons · CC0 Public Domain',
     clinicalPurpose:
       'Система парных (передних и задних) рефлекторных точек, открытая остеопатом Фрэнком Чапменом и интегрированная в ПК Джорджем Гудхартом. Служит одновременно для диагностики скрытой висцеральной/лимфатической перегрузки (через ТЛ) и мгновенного восстановления тонуса ассоциированной мышцы.',
@@ -188,7 +188,7 @@ export const DIAGNOSTIC_TESTS: DiagnosticTestProfile[] = [
     latinOrAlias: 'Bennett’s Neurovascular Reflexes · Сосудистая и эмоциональная регуляция (ЭСР)',
     category: 'Кинезиологические рефлексы (Чапмен / Беннетт)',
     targetRegion: 'Череп (лобные бугры, брегма, лямбда, теменные, височные и затылочные бугры)',
-    imageSrc: '/anatomy/head_neck_gray378.png',
+    imageSrc: './anatomy/head_neck_gray378.png',
     imageAttribution: 'Henry Gray Anatomy · Public Domain',
     clinicalPurpose:
       'Кожные сосудисто-вегетативные рефлексогенные зоны на голове, открытые хиропрактиком Терренсом Беннеттом. В прикладной кинезиологии применяются для нормализации кровоснабжения мышц и органов, а лобные бугры служат главным инструментом эмоциональной стресс-разгрузки (ЭСР).',
@@ -229,7 +229,7 @@ export const DIAGNOSTIC_TESTS: DiagnosticTestProfile[] = [
     latinOrAlias: 'Spurling Test · Провокация шейных корешков (C4–C8)',
     category: 'Ортопедические и сосудистые допуски',
     targetRegion: 'Межпозвонковые отверстия шейного отдела (C3–C7) и спинномозговые корешки',
-    imageSrc: '/anatomy/neuro/vertebral_column.png',
+    imageSrc: './anatomy/neuro/vertebral_column.png',
     imageAttribution: 'Henry Gray Anatomy · Public Domain',
     clinicalPurpose:
       'Выявление фораминального стеноза или грыжевой компрессии шейного спинномозгового корешка перед проведением тракций, МЭТ и особенно трастов среднешейного отдела (C3–C7).',
@@ -268,7 +268,7 @@ export const DIAGNOSTIC_TESTS: DiagnosticTestProfile[] = [
     latinOrAlias: 'Adson’s & Wright’s Hyperabduction Tests · Компрессия сосудисто-нервного пучка',
     category: 'Ортопедические и сосудистые допуски',
     targetRegion: 'Лестничная щель, рёберно-ключичное пространство и туннель малой грудной мышцы',
-    imageSrc: '/anatomy/mmt/openstax_pectoral_girdle.png',
+    imageSrc: './anatomy/mmt/openstax_pectoral_girdle.png',
     imageAttribution: 'OpenStax Anatomy & Physiology 2e · CC BY 4.0',
     clinicalPurpose:
       'Дифференциация уровня компрессии подключичной артерии и плечевого сплетения при онемении пальцев рук, зябкости кистей, болях в шее/плече и слабости мышц руки (подготовка к коррекции C7–Th1 и малой грудной мышцы).',
@@ -308,7 +308,7 @@ export const DIAGNOSTIC_TESTS: DiagnosticTestProfile[] = [
     latinOrAlias: 'Lasègue / Straight Leg Raise · Нейродинамика седалищного нерва и корешков L4–S1',
     category: 'Нейродинамика и провокации ММТ',
     targetRegion: 'Пояснично-крестцовые корешки (L4–S1) и седалищный нерв',
-    imageSrc: '/anatomy/mmt/openstax_pelvis_thigh.png',
+    imageSrc: './anatomy/mmt/openstax_pelvis_thigh.png',
     imageAttribution: 'OpenStax Anatomy & Physiology 2e · CC BY 4.0',
     clinicalPurpose:
       'Дифференциация истинной корешковой радикулопатии (грыжа L4–L5 / L5–S1) от миофасциального укорочения хамстрингов или синдрома грушевидной мышцы перед назначением поясничного траста («люмбального ролла»).',
@@ -348,7 +348,7 @@ export const DIAGNOSTIC_TESTS: DiagnosticTestProfile[] = [
     latinOrAlias: 'Gillet / Stork Test & FABER Test · Биомеханика таза, КПС и ТБС',
     category: 'Нейродинамика и провокации ММТ',
     targetRegion: 'Крестцово-подвздошное сочленение (КПС), подвздошная кость и тазобедренный сустав',
-    imageSrc: '/anatomy/mmt/openstax_pelvis_thigh.png',
+    imageSrc: './anatomy/mmt/openstax_pelvis_thigh.png',
     imageAttribution: 'OpenStax Anatomy & Physiology 2e · CC BY 4.0',
     clinicalPurpose:
       'Определение заблокированной стороны таза (КПС) при скрученном тазе, боли в крестце и дифференциация артроза тазобедренного сустава от дисфункции КПС и спазма грушевидной/подвздошно-поясничной мышц.',
@@ -387,7 +387,7 @@ export const DIAGNOSTIC_TESTS: DiagnosticTestProfile[] = [
     latinOrAlias: 'Spring Test · Ottawa Rules · Thompson Squeeze Test · Допуск спины и голеностопа',
     category: 'Ортопедические и сосудистые допуски',
     targetRegion: 'Грудопоясничный отдел (Th–L), голеностоп, свод стопы и ахиллово сухожилие',
-    imageSrc: '/anatomy/mmt/openstax_foot.png',
+    imageSrc: './anatomy/mmt/openstax_foot.png',
     imageAttribution: 'OpenStax Anatomy & Physiology 2e · CC BY 4.0',
     clinicalPurpose:
       'Триада обязательных ортопедических скрининговых проб из справочника трастов и тейпирования: оценка подвижности сегментов спины перед грудным/поясничным трастом (Спринг-тест), исключение скрытого перелома лодыжек/стопы (Правила Оттавы) и исключение полного разрыва ахиллова сухожилия (Симптом Томпсона).',

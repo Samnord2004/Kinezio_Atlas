@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain, Menu, shell, net } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, shell, net, session, systemPreferences } = require('electron');
 const fs = require('fs');
 const fsp = require('fs/promises');
 const os = require('os');
@@ -165,6 +165,21 @@ function createMainWindow() {
 }
 
 app.whenReady().then(() => {
+  const allowedPermissions = new Set([
+    'media',
+    'microphone',
+    'audioCapture',
+    'speech-recognition',
+    'clipboard-sanitized-write',
+    'notifications',
+  ]);
+  session.defaultSession.setPermissionCheckHandler((_webContents, permission) => {
+    return allowedPermissions.has(permission);
+  });
+  session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+    callback(allowedPermissions.has(permission));
+  });
+
   buildMenu();
   createMainWindow();
 
@@ -281,6 +296,34 @@ ipcMain.handle('kinezio:open-external', async (_event, url) => {
   if (!url) return false;
   await shell.openExternal(url);
   return true;
+});
+
+ipcMain.handle('kinezio:request-microphone', async () => {
+  if (process.platform !== 'darwin') {
+    return { status: 'granted', granted: true };
+  }
+  const current = systemPreferences.getMediaAccessStatus('microphone');
+  if (current === 'granted') {
+    return { status: 'granted', granted: true };
+  }
+  if (current === 'not-determined') {
+    const granted = await systemPreferences.askForMediaAccess('microphone');
+    return {
+      status: systemPreferences.getMediaAccessStatus('microphone'),
+      granted,
+    };
+  }
+  return { status: current, granted: false };
+});
+
+ipcMain.handle('kinezio:open-mic-settings', async () => {
+  if (process.platform === 'darwin') {
+    await shell.openExternal(
+      'x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone'
+    );
+    return true;
+  }
+  return false;
 });
 
 ipcMain.handle('kinezio:check-updates', async (_event, feedUrl) => {

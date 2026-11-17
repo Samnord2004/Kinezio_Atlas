@@ -1071,7 +1071,7 @@ export const LocalHostingModal: React.FC<LocalHostingModalProps> = ({
                     type="text"
                     value={feedUrl}
                     onChange={(e) => setFeedUrl(e.target.value)}
-                    placeholder="/version.json или https://.../version.json"
+                    placeholder="./version.json или https://.../version.json"
                     className="flex-1 px-3 py-2 text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600 focus:bg-white"
                   />
                   <button

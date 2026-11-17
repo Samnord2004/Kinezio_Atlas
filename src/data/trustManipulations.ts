@@ -6,7 +6,7 @@ export const TRUST_MANIPULATIONS: TrustManipulationProfile[] = [
     name: 'Трастовая декомпрессия краниовертебрального перехода (C0–C1 / C1–C2)',
     segmentLevel: 'C0–C1 · Атланто-затылочный и атланто-аксиальный суставы',
     region: 'Шейный отдел (C0–C7)',
-    imageSrc: '/anatomy/mmt/openstax_neck_lateral.png',
+    imageSrc: './anatomy/mmt/openstax_neck_lateral.png',
     imageAttribution: 'OpenStax Anatomy & Physiology 2e · CC BY 4.0',
     biomechanicalIndication:
       'Ротационная фиксация атланта (C1), рецидивирующий спазм подзатылочных мышц, односторонняя субокципитальная головная боль и головокружение шеечного генеза при сохранном кровотоке.',
@@ -36,7 +36,7 @@ export const TRUST_MANIPULATIONS: TrustManipulationProfile[] = [
     name: 'Ротационно-латеральный траст среднешейного отдела (C3–C7)',
     segmentLevel: 'C3–C7 · Дугоотростчатые суставы шеи',
     region: 'Шейный отдел (C0–C7)',
-    imageSrc: '/anatomy/neck_gray385.png',
+    imageSrc: './anatomy/neck_gray385.png',
     imageAttribution: 'Gray’s Anatomy · Public Domain',
     biomechanicalIndication:
       'Фасеточный блок C4–C6 (ограничение бокового наклона и ротации, корешковая ирритация в плечо/руку без острой грыжевой секвестрации), гипотония дельтовидной или бицепса, зависящая от поворота шеи.',
@@ -65,7 +65,7 @@ export const TRUST_MANIPULATIONS: TrustManipulationProfile[] = [
     name: 'Траст шейно-грудного перехода (C7–Th1 «холка»)',
     segmentLevel: 'C7–Th1 · Шейно-грудной переход и I ребро',
     region: 'Грудной отдел и рёбра',
-    imageSrc: '/anatomy/neuro/vertebral_column.png',
+    imageSrc: './anatomy/neuro/vertebral_column.png',
     imageAttribution: 'Gray’s Anatomy · Public Domain',
     biomechanicalIndication:
       'Блок C7–Th1 (гипомобильность, «вдовий горбик»), парестезии в кистях (синдром верхней апертуры), дисфункция точки GV-14 и стойкий гипертонус верхней трапеции.',
@@ -93,7 +93,7 @@ export const TRUST_MANIPULATIONS: TrustManipulationProfile[] = [
     name: 'Грудной переднезадний траст («пистолетная» техника Th3–Th10)',
     segmentLevel: 'Th3–Th10 · Грудные позвоночно-двигательные сегменты и рёбра',
     region: 'Грудной отдел и рёбра',
-    imageSrc: '/anatomy/mmt/openstax_thorax.png',
+    imageSrc: './anatomy/mmt/openstax_thorax.png',
     imageAttribution: 'OpenStax Anatomy & Physiology 2e · CC BY 4.0',
     biomechanicalIndication:
       'Экстензионная или флексионная фиксация среднегрудного отдела, межлопаточная боль, блокирование экскурсии грудобрюшной диафрагмы и висцеро-вертебральные блоки (желудок Th5–Th9, печень Th6–Th10).',
@@ -121,7 +121,7 @@ export const TRUST_MANIPULATIONS: TrustManipulationProfile[] = [
     name: 'Поясничный ротационный траст («люмбальный ролл» L1–L5)',
     segmentLevel: 'L1–L5 · Поясничные дугоотростчатые суставы',
     region: 'Поясничный отдел (L1–L5)',
-    imageSrc: '/anatomy/mmt/openstax_abdomen.png',
+    imageSrc: './anatomy/mmt/openstax_abdomen.png',
     imageAttribution: 'OpenStax Anatomy & Physiology 2e · CC BY 4.0',
     biomechanicalIndication:
       'Блок дугоотростчатых суставов поясницы, острый функциональный фасеточный блок при наклоне/разгибании, асимметричная слабость подвздошно-поясничной или четырёхглавой мышцы бедра.',
@@ -149,7 +149,7 @@ export const TRUST_MANIPULATIONS: TrustManipulationProfile[] = [
     name: 'Трастовая коррекция крестцово-подвздошного сочленения (КПС / Таз)',
     segmentLevel: 'SIJ · Крестцово-подвздошный сустав (передний/задний разворот таза)',
     region: 'Таз и КПС',
-    imageSrc: '/anatomy/mmt/openstax_pelvis_thigh.png',
+    imageSrc: './anatomy/mmt/openstax_pelvis_thigh.png',
     imageAttribution: 'OpenStax Anatomy & Physiology 2e · CC BY 4.0',
     biomechanicalIndication:
       'Фиксированное скручивание таза (задняя или передняя ротация подвздошной кости, инфлер/аутфлер), функциональное укорочение ноги, синдром грушевидной мышцы и слабость средней ягодичной мышцы.',
@@ -177,7 +177,7 @@ export const TRUST_MANIPULATIONS: TrustManipulationProfile[] = [
     name: 'Трастовая мобилизация предплюсны и голеностопа (таранно-ладьевидный сустав)',
     segmentLevel: 'Таранная · Ладьевидная и кубовидная кости стопы',
     region: 'Периферические суставы',
-    imageSrc: '/anatomy/mmt/openstax_foot.png',
+    imageSrc: './anatomy/mmt/openstax_foot.png',
     imageAttribution: 'OpenStax Anatomy & Physiology 2e · CC BY 4.0',
     biomechanicalIndication:
       'Блок таранной кости кпереди или опущение ладьевидной/кубовидной кости после давнего подворота стопы, ограничивающий тыльное сгибание и запускающий восходящую слабость всей Глубинной фронтальной и Латеральной линий.',

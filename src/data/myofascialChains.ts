@@ -64,7 +64,7 @@ export const MYOFASCIAL_CHAINS: MyofascialChain[] = [
       },
     ],
     color: '#2563eb',
-    imageSrc: '/anatomy/chains/openstax_posterior_unlabeled.png',
+    imageSrc: './anatomy/chains/openstax_posterior_unlabeled.png',
     imageCaption:
       'Задняя мышечно-фасциальная поверхность тела: подзатылочные, разгибатели спины, тораколюмбальная фасция, хамстринги и ахиллово-икроножный комплекс',
     imageAttribution: 'OpenStax Anatomy & Physiology (Wikimedia Commons) · CC BY 4.0',
@@ -157,7 +157,7 @@ export const MYOFASCIAL_CHAINS: MyofascialChain[] = [
       },
     ],
     color: '#059669',
-    imageSrc: '/anatomy/chains/openstax_anterior_unlabeled.png',
+    imageSrc: './anatomy/chains/openstax_anterior_unlabeled.png',
     imageCaption:
       'Передняя мышечно-фасциальная поверхность тела: ГКСМ, грудинная фасция, прямая мышца живота, квадрицепс и передняя большеберцовая мышца',
     imageAttribution: 'OpenStax Anatomy & Physiology (Wikimedia Commons) · CC BY 4.0',
@@ -252,7 +252,7 @@ export const MYOFASCIAL_CHAINS: MyofascialChain[] = [
       },
     ],
     color: '#d97706',
-    imageSrc: '/anatomy/chains/commons_lateral_tfl_itb.png',
+    imageSrc: './anatomy/chains/commons_lateral_tfl_itb.png',
     imageCaption:
       'Напрягатель широкой фасции бедра (TFL), подвздошно-большеберцовый тракт (ITB), гребень подвздошной кости и квадратная мышца поясницы',
     imageAttribution: 'Gray’s Anatomy / Wikimedia Commons · Public Domain',
@@ -352,7 +352,7 @@ export const MYOFASCIAL_CHAINS: MyofascialChain[] = [
       },
     ],
     color: '#7c3aed',
-    imageSrc: '/anatomy/chains/gray_external_oblique.png',
+    imageSrc: './anatomy/chains/gray_external_oblique.png',
     imageCaption:
       'Спиральный перекрёст корпуса: передняя зубчатая мышца, наружная косая мышца живота, белая линия живота и широчайшая мышца спины',
     imageAttribution: 'Gray’s Anatomy / Wikimedia Commons · Public Domain',
@@ -456,7 +456,7 @@ export const MYOFASCIAL_CHAINS: MyofascialChain[] = [
       },
     ],
     color: '#dc2626',
-    imageSrc: '/anatomy/chains/openstax_deep_core.png',
+    imageSrc: './anatomy/chains/openstax_deep_core.png',
     imageCaption:
       'Глубинный осевой стержень пояснично-тазового перехода: большая поясничная (psoas major), подвздошная и квадратная мышцы поясницы',
     imageAttribution: 'OpenStax Anatomy & Physiology (Wikimedia Commons) · CC BY 4.0',
@@ -560,7 +560,7 @@ export const MYOFASCIAL_CHAINS: MyofascialChain[] = [
       },
     ],
     color: '#0284c7',
-    imageSrc: '/anatomy/mmt/openstax_upper_limb.png',
+    imageSrc: './anatomy/mmt/openstax_upper_limb.png',
     imageCaption:
       'Передние и задние линии плечевого пояса и руки: большая грудная, передняя зубчатая, вращательная манжета, дельтовидная, трицепс и широчайшая спины',
     imageAttribution: 'OpenStax Anatomy & Physiology 2e · CC BY 4.0',
@@ -647,7 +647,7 @@ export const MYOFASCIAL_CHAINS: MyofascialChain[] = [
       },
     ],
     color: '#0d9488',
-    imageSrc: '/anatomy/chains/gray_posterior_trunk_latissimus.png',
+    imageSrc: './anatomy/chains/gray_posterior_trunk_latissimus.png',
     imageCaption:
       'Перекрёстная задняя функциональная дуга: широчайшая мышца спины, пояснично-грудная (тораколюмбальная) фасция и переход на крестец к контралатеральной ягодичной области',
     imageAttribution: 'Gray’s Anatomy Plate 409 (Wikimedia Commons) · Public Domain',

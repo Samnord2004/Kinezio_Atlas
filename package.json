@@ -35,6 +35,10 @@
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "КинезиоАтлас использует микрофон для голосовой диктовки жалоб пациента и аудиозаметок приёма.",
+        "NSSpeechRecognitionUsageDescription": "КинезиоАтлас использует распознавание речи для заполнения карты боли и шкалы жалоб."
+      },
       "target": [
         {
           "target": "dmg",

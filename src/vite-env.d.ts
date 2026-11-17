@@ -22,6 +22,8 @@ interface KinezioDesktopBridge {
   listFiles: (dirPath: string) => Promise<Array<{ filename: string; sizeBytes: number; modifiedAt: string }>>;
   openFolder: (dirPath: string) => Promise<boolean>;
   openExternal: (url: string) => Promise<boolean>;
+  requestMicrophoneAccess: () => Promise<{ status: string; granted: boolean }>;
+  openMicrophoneSettings: () => Promise<boolean>;
   checkForUpdates: (feedUrl: string) => Promise<{
     ok: boolean;
     manifest?: {

@@ -55,21 +55,21 @@ interface MuscleAtlasPlateSpec {
 }
 
 const PHOTO_PSOAS: ClinicalPhotoRef = {
-  src: '/anatomy/mmt/mmt_psoas.jpg',
+  src: './anatomy/mmt/mmt_psoas.jpg',
   caption:
     'Клиническое ММТ сгибателей бедра / подвздошно-поясничной мышцы: фиксация таза и вектор давления на дистальную часть бедра',
   attribution: 'Wikimedia Commons · CC BY-SA 4.0',
 };
 
 const PHOTO_RECTUS_FEMORIS: ClinicalPhotoRef = {
-  src: '/anatomy/mmt/mmt_rectus_femoris.jpg',
+  src: './anatomy/mmt/mmt_rectus_femoris.jpg',
   caption:
     'Мануальное мышечное тестирование передней группы мышц бедра: стабилизация контралатерального таза и давление над коленным суставом',
   attribution: 'Wikimedia Commons · CC BY-SA 4.0',
 };
 
 const PHOTO_SHOULDER_ELEVATION: ClinicalPhotoRef = {
-  src: '/anatomy/mmt/mmt_neer_shoulder.jpg',
+  src: './anatomy/mmt/mmt_neer_shoulder.jpg',
   caption:
     'Клиническая схема позиционирования плечевого сустава, фиксации лопатки и вектора нагрузки на плечевой пояс',
   attribution: 'Wikimedia Commons · CC BY-SA 4.0',
@@ -78,7 +78,7 @@ const PHOTO_SHOULDER_ELEVATION: ClinicalPhotoRef = {
 const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
   // === 1. ГОЛОВА И ВНЧС ===
   masseter: {
-    plateSrc: '/anatomy/mmt/openstax_head_chewing.png',
+    plateSrc: './anatomy/mmt/openstax_head_chewing.png',
     plateTitle: 'Жевательные мышцы (поверхностный и глубокий слои)',
     xPct: 22,
     yPct: 65,
@@ -87,7 +87,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на спине или сидя; зубы сомкнуты, давление на подбородок вниз',
   },
   temporalis: {
-    plateSrc: '/anatomy/mmt/openstax_head_chewing.png',
+    plateSrc: './anatomy/mmt/openstax_head_chewing.png',
     plateTitle: 'Височная мышца и латеральная поверхность черепа',
     xPct: 26,
     yPct: 26,
@@ -96,7 +96,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Рот слегка приоткрыт, давление на подбородок вниз и кпереди',
   },
   'lateral-pterygoid': {
-    plateSrc: '/anatomy/mmt/openstax_head_chewing.png',
+    plateSrc: './anatomy/mmt/openstax_head_chewing.png',
     plateTitle: 'Латеральная крыловидная мышца (глубокая диссекция)',
     xPct: 78,
     yPct: 44,
@@ -105,7 +105,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Нижняя челюсть выдвинута вперёд/в сторону; давление назад к ВНЧС',
   },
   'medial-pterygoid': {
-    plateSrc: '/anatomy/mmt/openstax_head_chewing.png',
+    plateSrc: './anatomy/mmt/openstax_head_chewing.png',
     plateTitle: 'Медиальная крыловидная мышца (внутренний угол челюсти)',
     xPct: 76,
     yPct: 65,
@@ -114,7 +114,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Зубы сомкнуты со смещением челюсти; вектор давления вниз и медиально',
   },
   suboccipitals: {
-    plateSrc: '/anatomy/mmt/openstax_neck_lateral.png',
+    plateSrc: './anatomy/mmt/openstax_neck_lateral.png',
     plateTitle: 'Подзатылочные мышцы (область C0–C1–C2)',
     xPct: 77,
     yPct: 25,
@@ -125,7 +125,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
 
   // === 2. ШЕЙНЫЙ ОТДЕЛ ===
   'suprahyoid-infrahyoid': {
-    plateSrc: '/anatomy/mmt/openstax_neck_front.png',
+    plateSrc: './anatomy/mmt/openstax_neck_front.png',
     plateTitle: 'Надподъязычная и подподъязычная группы мышц',
     xPct: 49,
     yPct: 44,
@@ -134,7 +134,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на спине, язык прижат к твёрдому нёбу, подъязычная кость стабилизирована',
   },
   scm: {
-    plateSrc: '/anatomy/mmt/openstax_neck_lateral.png',
+    plateSrc: './anatomy/mmt/openstax_neck_lateral.png',
     plateTitle: 'Грудино-ключично-сосцевидная мышца (боковая поверхность)',
     xPct: 12,
     yPct: 42,
@@ -143,7 +143,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на спине, голова приподнята и ротирована в противоположную сторону',
   },
   scalenes: {
-    plateSrc: '/anatomy/mmt/openstax_neck_lateral.png',
+    plateSrc: './anatomy/mmt/openstax_neck_lateral.png',
     plateTitle: 'Лестничные мышцы (передняя, средняя, задняя)',
     xPct: 13,
     yPct: 68,
@@ -152,7 +152,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на спине, сгибание шеи 25° с ротацией 15° в сторону тестирования',
   },
   'deep-neck-flexors': {
-    plateSrc: '/anatomy/mmt/openstax_neck_front.png',
+    plateSrc: './anatomy/mmt/openstax_neck_front.png',
     plateTitle: 'Передняя поверхность шеи и проекция глубоких сгибателей',
     xPct: 49,
     yPct: 30,
@@ -161,7 +161,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на спине, втягивание подбородка («двойной подбородок»), подъём головы',
   },
   'cervical-extensors': {
-    plateSrc: '/anatomy/mmt/openstax_neck_lateral.png',
+    plateSrc: './anatomy/mmt/openstax_neck_lateral.png',
     plateTitle: 'Разгибатели шеи (ременная, полуостистая, длиннейшая головы)',
     xPct: 87,
     yPct: 45,
@@ -170,7 +170,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на животе, голова выведена за край кушетки в разгибании',
   },
   'upper-trapezius': {
-    plateSrc: '/anatomy/mmt/openstax_pectoral_girdle.png',
+    plateSrc: './anatomy/mmt/openstax_pectoral_girdle.png',
     plateTitle: 'Верхняя порция трапециевидной мышцы',
     xPct: 70,
     yPct: 56,
@@ -179,7 +179,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Сидя, надплечье поднято к уху, голова наклонена в сторону теста',
   },
   'levator-scapulae': {
-    plateSrc: '/anatomy/mmt/openstax_neck_lateral.png',
+    plateSrc: './anatomy/mmt/openstax_neck_lateral.png',
     plateTitle: 'Мышца, поднимающая лопатку (боковой и задний виды)',
     xPct: 16,
     yPct: 48,
@@ -190,7 +190,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
 
   // === 3. ГРУДНОЙ ОТДЕЛ И ПЛЕЧЕВОЙ ПОЯС ===
   'pectoralis-major-clavicular': {
-    plateSrc: '/anatomy/mmt/openstax_upper_limb.png',
+    plateSrc: './anatomy/mmt/openstax_upper_limb.png',
     plateTitle: 'Большая грудная мышца (ключичная порция)',
     xPct: 18,
     yPct: 12,
@@ -199,7 +199,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на спине, рука согнута под 90° и слегка приведена (вверх-кнаружи)',
   },
   'pectoralis-major-sternal': {
-    plateSrc: '/anatomy/mmt/openstax_upper_limb.png',
+    plateSrc: './anatomy/mmt/openstax_upper_limb.png',
     plateTitle: 'Большая грудная мышца (грудинная порция)',
     xPct: 20,
     yPct: 17,
@@ -208,7 +208,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на спине, рука под 90°, вектор давления кнаружи-вверх по диагонали',
   },
   'pectoralis-minor': {
-    plateSrc: '/anatomy/mmt/openstax_pectoral_girdle.png',
+    plateSrc: './anatomy/mmt/openstax_pectoral_girdle.png',
     plateTitle: 'Малая грудная мышца (передне-латеральный вид)',
     xPct: 21,
     yPct: 31,
@@ -217,7 +217,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на спине, протракция и передний наклон плечевого сустава к потолку',
   },
   'serratus-anterior': {
-    plateSrc: '/anatomy/mmt/openstax_thorax.png',
+    plateSrc: './anatomy/mmt/openstax_thorax.png',
     plateTitle: 'Передняя зубчатая мышца (рёберные зубцы)',
     xPct: 36,
     yPct: 68,
@@ -226,7 +226,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Сидя/лёжа, рука вытянута вперёд под 110–120° с протракцией лопатки',
   },
   deltoid: {
-    plateSrc: '/anatomy/mmt/openstax_upper_limb.png',
+    plateSrc: './anatomy/mmt/openstax_upper_limb.png',
     plateTitle: 'Дельтовидная мышца (средняя, передняя и задняя порции)',
     xPct: 57,
     yPct: 17,
@@ -236,7 +236,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     clinicalPhoto: PHOTO_SHOULDER_ELEVATION,
   },
   supraspinatus: {
-    plateSrc: '/anatomy/mmt/openstax_upper_limb.png',
+    plateSrc: './anatomy/mmt/openstax_upper_limb.png',
     plateTitle: 'Надостная мышца (надостная ямка лопатки)',
     xPct: 82,
     yPct: 58,
@@ -246,7 +246,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     clinicalPhoto: PHOTO_SHOULDER_ELEVATION,
   },
   infraspinatus: {
-    plateSrc: '/anatomy/mmt/openstax_upper_limb.png',
+    plateSrc: './anatomy/mmt/openstax_upper_limb.png',
     plateTitle: 'Подостная и малая круглая мышцы (наружные ротаторы)',
     xPct: 82,
     yPct: 68,
@@ -255,7 +255,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа или сидя, локоть 90°, наружная ротация плеча против давления внутрь',
   },
   subscapularis: {
-    plateSrc: '/anatomy/mmt/openstax_upper_limb.png',
+    plateSrc: './anatomy/mmt/openstax_upper_limb.png',
     plateTitle: 'Подлопаточная мышца (передняя поверхность лопатки)',
     xPct: 25,
     yPct: 65,
@@ -264,7 +264,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на животе/спине, плечо отведено на 90°, внутренняя ротация предплечья',
   },
   'middle-lower-trapezius': {
-    plateSrc: '/anatomy/mmt/openstax_pectoral_girdle.png',
+    plateSrc: './anatomy/mmt/openstax_pectoral_girdle.png',
     plateTitle: 'Средняя и нижняя порции трапециевидной мышцы',
     xPct: 72,
     yPct: 74,
@@ -273,7 +273,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на животе, рука отведена на 90° (средняя) или 135° (нижняя) вверх',
   },
   rhomboids: {
-    plateSrc: '/anatomy/mmt/openstax_pectoral_girdle.png',
+    plateSrc: './anatomy/mmt/openstax_pectoral_girdle.png',
     plateTitle: 'Большая и малая ромбовидные мышцы',
     xPct: 85,
     yPct: 68,
@@ -282,7 +282,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Сидя/лёжа на животе, рука приведена и локоть отведён назад (ретракция лопатки)',
   },
   'latissimus-dorsi': {
-    plateSrc: '/anatomy/mmt/openstax_upper_limb.png',
+    plateSrc: './anatomy/mmt/openstax_upper_limb.png',
     plateTitle: 'Широчайшая мышца спины (задне-латеральный вид)',
     xPct: 69,
     yPct: 32,
@@ -291,7 +291,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на животе/спине, прямая рука во внутренней ротации приводится к тазу',
   },
   'erector-spinae': {
-    plateSrc: '/anatomy/mmt/openstax_neck_back.png',
+    plateSrc: './anatomy/mmt/openstax_neck_back.png',
     plateTitle: 'Мышца, выпрямляющая позвоночник (подвздошно-рёберная и длиннейшая)',
     xPct: 41,
     yPct: 62,
@@ -302,7 +302,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
 
   // === 4. ВЕРХНЯЯ КОНЕЧНОСТЬ ===
   coracobrachialis: {
-    plateSrc: '/anatomy/mmt/openstax_forearm.png',
+    plateSrc: './anatomy/mmt/openstax_forearm.png',
     plateTitle: 'Клювовидно-плечевая и передние мышцы плеча',
     xPct: 23,
     yPct: 12,
@@ -311,7 +311,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на спине, плечо согнуто 45–60°, локоть максимально согнут, кисть супинирована',
   },
   'biceps-brachii': {
-    plateSrc: '/anatomy/mmt/openstax_forearm.png',
+    plateSrc: './anatomy/mmt/openstax_forearm.png',
     plateTitle: 'Двуглавая мышца плеча (длинная и короткая головки)',
     xPct: 29,
     yPct: 18,
@@ -320,7 +320,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Сидя/лёжа, локоть согнут под 90°, предплечье в супинации',
   },
   'triceps-brachii': {
-    plateSrc: '/anatomy/mmt/openstax_forearm.png',
+    plateSrc: './anatomy/mmt/openstax_forearm.png',
     plateTitle: 'Трёхглавая мышца плеча (задняя поверхность плеча)',
     xPct: 82,
     yPct: 18,
@@ -329,7 +329,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на животе/спине, предплечье разогнуто на ~15° от прямого угла',
   },
   brachioradialis: {
-    plateSrc: '/anatomy/mmt/openstax_forearm.png',
+    plateSrc: './anatomy/mmt/openstax_forearm.png',
     plateTitle: 'Плечелучевая мышца (латеральный край предплечья)',
     xPct: 24,
     yPct: 41,
@@ -338,7 +338,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Сидя, локоть 90°, предплечье в среднем положении (большой палец вверх)',
   },
   'wrist-flexors': {
-    plateSrc: '/anatomy/mmt/openstax_forearm.png',
+    plateSrc: './anatomy/mmt/openstax_forearm.png',
     plateTitle: 'Сгибатели запястья (ладонная поверхность предплечья)',
     xPct: 26,
     yPct: 48,
@@ -347,7 +347,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Предплечье фиксировано супинированным, кисть в ладонном сгибании',
   },
   'wrist-extensors': {
-    plateSrc: '/anatomy/mmt/openstax_forearm.png',
+    plateSrc: './anatomy/mmt/openstax_forearm.png',
     plateTitle: 'Разгибатели запястья и пальцев (тыльная поверхность)',
     xPct: 76,
     yPct: 44,
@@ -358,7 +358,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
 
   // === 5. ПОЯСНИЧНО-ТАЗОВЫЙ РЕГИОН ===
   iliopsoas: {
-    plateSrc: '/anatomy/mmt/openstax_abdomen.png',
+    plateSrc: './anatomy/mmt/openstax_abdomen.png',
     plateTitle: 'Подвздошно-поясничная мышца (psoas major и iliacus)',
     xPct: 60,
     yPct: 74,
@@ -368,7 +368,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     clinicalPhoto: PHOTO_PSOAS,
   },
   'quadratus-lumborum': {
-    plateSrc: '/anatomy/mmt/openstax_abdomen.png',
+    plateSrc: './anatomy/mmt/openstax_abdomen.png',
     plateTitle: 'Квадратная мышца поясницы (задняя брюшная стенка)',
     xPct: 39,
     yPct: 58,
@@ -377,7 +377,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на спине, латерофлексия туловища и ног в сторону тестируемой мышцы',
   },
   'rectus-abdominis': {
-    plateSrc: '/anatomy/mmt/openstax_abdomen.png',
+    plateSrc: './anatomy/mmt/openstax_abdomen.png',
     plateTitle: 'Прямая мышца живота (передняя брюшная стенка)',
     xPct: 39,
     yPct: 24,
@@ -386,7 +386,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на спине, корпус приподнят с отрывом лопаток (или удержание ног)',
   },
   'obliques-abdominis': {
-    plateSrc: '/anatomy/mmt/openstax_abdomen.png',
+    plateSrc: './anatomy/mmt/openstax_abdomen.png',
     plateTitle: 'Наружная, внутренняя косые и поперечная мышцы живота',
     xPct: 46,
     yPct: 20,
@@ -395,7 +395,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на спине с ротацией грудной клетки к противоположному бедру',
   },
   'pelvic-floor-muscles': {
-    plateSrc: '/anatomy/mmt/openstax_pelvic_floor.png',
+    plateSrc: './anatomy/mmt/openstax_pelvic_floor.png',
     plateTitle: 'Диафрагма таза (мышца, поднимающая задний проход)',
     xPct: 45,
     yPct: 50,
@@ -404,7 +404,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Оценка через индикаторные мышцы (приводящие/ягодичные) на провокации тазового дна',
   },
   piriformis: {
-    plateSrc: '/anatomy/mmt/openstax_pelvis_thigh.png',
+    plateSrc: './anatomy/mmt/openstax_pelvis_thigh.png',
     plateTitle: 'Грушевидная мышца (глубокий слой ягодичной области)',
     xPct: 77,
     yPct: 63,
@@ -413,7 +413,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Сидя (колено 90°) или лёжа на животе, тест наружной ротации бедра',
   },
   'gluteus-medius': {
-    plateSrc: '/anatomy/mmt/openstax_pelvis_thigh.png',
+    plateSrc: './anatomy/mmt/openstax_pelvis_thigh.png',
     plateTitle: 'Средняя и малая ягодичные мышцы (отводящие бедро)',
     xPct: 78,
     yPct: 56,
@@ -422,7 +422,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на боку (или на спине), отведение прямой ноги в нейтральной ротации',
   },
   'gluteus-maximus': {
-    plateSrc: '/anatomy/mmt/openstax_pelvis_thigh.png',
+    plateSrc: './anatomy/mmt/openstax_pelvis_thigh.png',
     plateTitle: 'Большая ягодичная мышца (задняя поверхность таза)',
     xPct: 71,
     yPct: 67,
@@ -431,7 +431,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на животе, колено согнуто на 90° для выключения хамстрингов, разгибание бедра',
   },
   'obturator-internus': {
-    plateSrc: '/anatomy/mmt/openstax_pelvis_thigh.png',
+    plateSrc: './anatomy/mmt/openstax_pelvis_thigh.png',
     plateTitle: 'Внутренняя запирательная и близнецовые мышцы',
     xPct: 72,
     yPct: 62,
@@ -440,7 +440,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Сидя со свешенными голенями, наружная ротация бедра из позиции 90° флексии',
   },
   'tensor-fasciae-latae': {
-    plateSrc: '/anatomy/mmt/openstax_pelvis_thigh.png',
+    plateSrc: './anatomy/mmt/openstax_pelvis_thigh.png',
     plateTitle: 'Напрягатель широкой фасции бедра (TFL)',
     xPct: 15,
     yPct: 21,
@@ -452,7 +452,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
 
   // === 6. НИЖНЯЯ КОНЕЧНОСТЬ ===
   'quadriceps-femoris': {
-    plateSrc: '/anatomy/mmt/openstax_pelvis_thigh.png',
+    plateSrc: './anatomy/mmt/openstax_pelvis_thigh.png',
     plateTitle: 'Четырёхглавая мышца бедра (прямая и широкие головки)',
     xPct: 19,
     yPct: 29,
@@ -462,7 +462,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     clinicalPhoto: PHOTO_RECTUS_FEMORIS,
   },
   hamstrings: {
-    plateSrc: '/anatomy/mmt/openstax_pelvis_thigh.png',
+    plateSrc: './anatomy/mmt/openstax_pelvis_thigh.png',
     plateTitle: 'Задняя группа бедра (двуглавая, полусухожильная, полуперепончатая)',
     xPct: 76,
     yPct: 82,
@@ -471,7 +471,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на животе, колено согнуто 60–70°, вектор давления к разгибанию голени',
   },
   'hip-adductors': {
-    plateSrc: '/anatomy/mmt/openstax_pelvis_thigh.png',
+    plateSrc: './anatomy/mmt/openstax_pelvis_thigh.png',
     plateTitle: 'Приводящие мышцы бедра (длинная, короткая, большая, тонкая)',
     xPct: 25,
     yPct: 72,
@@ -481,7 +481,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     clinicalPhoto: PHOTO_RECTUS_FEMORIS,
   },
   sartorius: {
-    plateSrc: '/anatomy/mmt/openstax_pelvis_thigh.png',
+    plateSrc: './anatomy/mmt/openstax_pelvis_thigh.png',
     plateTitle: 'Портняжная мышца (косое пересечение бедра)',
     xPct: 21,
     yPct: 25,
@@ -491,7 +491,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     clinicalPhoto: PHOTO_RECTUS_FEMORIS,
   },
   popliteus: {
-    plateSrc: '/anatomy/mmt/openstax_lower_leg.png',
+    plateSrc: './anatomy/mmt/openstax_lower_leg.png',
     plateTitle: 'Подколенная мышца (глубокий задний слой колена)',
     xPct: 89,
     yPct: 25,
@@ -500,7 +500,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Сидя или лёжа на животе, внутренняя ротация голени при согнутом колене 90°',
   },
   gastrocnemius: {
-    plateSrc: '/anatomy/mmt/openstax_lower_leg.png',
+    plateSrc: './anatomy/mmt/openstax_lower_leg.png',
     plateTitle: 'Икроножная мышца (медиальная и латеральная головки)',
     xPct: 59,
     yPct: 36,
@@ -509,7 +509,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на животе/спине с прямым коленом, подошвенное сгибание стопы',
   },
   soleus: {
-    plateSrc: '/anatomy/mmt/openstax_lower_leg.png',
+    plateSrc: './anatomy/mmt/openstax_lower_leg.png',
     plateTitle: 'Камбаловидная мышца (глубокая задняя поверхность голени)',
     xPct: 58,
     yPct: 53,
@@ -518,7 +518,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на животе с коленом, согнутым под 90° (исключение икроножной)',
   },
   'tibialis-anterior': {
-    plateSrc: '/anatomy/mmt/openstax_lower_leg.png',
+    plateSrc: './anatomy/mmt/openstax_lower_leg.png',
     plateTitle: 'Передняя большеберцовая мышца (передний компартмент голени)',
     xPct: 23,
     yPct: 30,
@@ -527,7 +527,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Лёжа на спине, тыльное сгибание и инверсия стопы; давление вниз и в эверсию',
   },
   'tibialis-posterior': {
-    plateSrc: '/anatomy/mmt/openstax_lower_leg.png',
+    plateSrc: './anatomy/mmt/openstax_lower_leg.png',
     plateTitle: 'Задняя большеберцовая мышца (глубокий задний компартмент)',
     xPct: 91,
     yPct: 52,
@@ -536,7 +536,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
     poseSummary: 'Стопа в подошвенном сгибании и инверсии; вектор к тыльному сгибанию и эверсии',
   },
   'fibularis-peroneus': {
-    plateSrc: '/anatomy/mmt/openstax_lower_leg.png',
+    plateSrc: './anatomy/mmt/openstax_lower_leg.png',
     plateTitle: 'Длинная и короткая малоберцовые мышцы (латеральный компартмент)',
     xPct: 21,
     yPct: 41,
@@ -547,7 +547,7 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
 };
 
 const DEFAULT_PLATE_SPEC: MuscleAtlasPlateSpec = {
-  plateSrc: '/anatomy/mmt/openstax_pelvis_thigh.png',
+  plateSrc: './anatomy/mmt/openstax_pelvis_thigh.png',
   plateTitle: 'Анатомический регион скелетной мускулатуры',
   xPct: 50,
   yPct: 50,

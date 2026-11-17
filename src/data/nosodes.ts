@@ -8,7 +8,7 @@ export const NOSODES: NosodeProfile[] = [
     category: 'Инфекционно-паразитарные',
     potencyRange: 'D6 (острая нагрузка слизистых) · D12–D30 (хронический системный процесс)',
     ampouleRole: 'Провокационный нозод (выявляет нагрузку)',
-    imageSrc: '/anatomy/nosodes/candida_micro.jpg',
+    imageSrc: './anatomy/nosodes/candida_micro.jpg',
     imageAttribution: 'Wikimedia Commons · CC BY-SA 4.0',
     purpose:
       'Выявление скрытой грибковой нагрузки в ЖКТ, пазухах носа и мочеполовой сфере, вызывающей мышечную гипотонию, туман в голове, тягу к сладкому и утренний дискомфорт.',
@@ -45,7 +45,7 @@ export const NOSODES: NosodeProfile[] = [
     category: 'Инфекционно-паразитарные',
     potencyRange: 'D12 (реактивация) · D30–D200 (латентная персистенция в ганглиях)',
     ampouleRole: 'Провокационный нозод (выявляет нагрузку)',
-    imageSrc: '/anatomy/nosodes/viral_herpes.jpg',
+    imageSrc: './anatomy/nosodes/viral_herpes.jpg',
     imageAttribution: 'CDC / Wikimedia Commons · Public Domain',
     purpose:
       'Диагностика хронической вирусной персистенции при синдроме хронической усталости, миалгиях неясного генеза, лимфаденопатии и повторяющихся срывах шейно-грудных мышц.',
@@ -81,7 +81,7 @@ export const NOSODES: NosodeProfile[] = [
     category: 'Инфекционно-паразитарные',
     potencyRange: 'D6–D15 (активный желчевыводящий/кишечный очаг) · D30 (тканевой след)',
     ampouleRole: 'Провокационный нозод (выявляет нагрузку)',
-    imageSrc: '/anatomy/nosodes/parasite_giardia.jpg',
+    imageSrc: './anatomy/nosodes/parasite_giardia.jpg',
     imageAttribution: 'CDC / Wikimedia Commons · Public Domain',
     purpose:
       'Скрининг протозойно-гельминтной нагрузки в билиарном тракте и тонкой кишке при ночном бруксизме, аллергических реакциях, спазме сфинктера Одди и слабости мышц живота/бедра.',
@@ -117,7 +117,7 @@ export const NOSODES: NosodeProfile[] = [
     category: 'Инфекционно-паразитарные',
     potencyRange: 'D6–D12 (слизистые оболочки, миндалины, зубные гранулёмы)',
     ampouleRole: 'Провокационный нозод (выявляет нагрузку)',
-    imageSrc: '/anatomy/nosodes/glass_ampoules.jpg',
+    imageSrc: './anatomy/nosodes/glass_ampoules.jpg',
     imageAttribution: 'Wellcome Collection · Wikimedia Commons · CC BY 4.0',
     purpose:
       'Поиск скрытых фокальных инфекционных очагов (зубные корни, хронический тонзиллит, пазухи, слизистая желудка *H. pylori*), поддерживающих стойкий спазм шеи, ВНЧС и утреннюю тошноту.',
@@ -153,7 +153,7 @@ export const NOSODES: NosodeProfile[] = [
     category: 'Токсины и металлы',
     potencyRange: 'D6–D12 (циркулирующая нагрузка) · D30–D200 (внутриклеточное депо)',
     ampouleRole: 'Провокационный нозод (выявляет нагрузку)',
-    imageSrc: '/anatomy/nosodes/heavy_metals.jpg',
+    imageSrc: './anatomy/nosodes/heavy_metals.jpg',
     imageAttribution: 'Wikimedia Commons · CC BY 4.0',
     purpose:
       'Выявление токсической нагрузки солями тяжёлых металлов, промышленными химикатами и амальгамами, вызывающей глобальное истощение АТФ, невропатии, нейрологическое переключение KI-27 и дисфункцию печени/почек.',
@@ -189,7 +189,7 @@ export const NOSODES: NosodeProfile[] = [
     category: 'Пищевые и гистаминовые',
     potencyRange: 'D6–D12 (пищевая непереносимость и тучноклеточная реактивность)',
     ampouleRole: 'Провокационный нозод (выявляет нагрузку)',
-    imageSrc: '/anatomy/nosodes/reagent_vial.png',
+    imageSrc: './anatomy/nosodes/reagent_vial.png',
     imageAttribution: 'NIH BioArt · Public Domain',
     purpose:
       'Быстрое определение скрытых пищевых непереносимостей и гистаминового перегруза без взятия крови: выявление связи между рационом, отёчностью пазух, кожными симптомами и слабостью мышц живота/бёдер.',
@@ -225,7 +225,7 @@ export const NOSODES: NosodeProfile[] = [
     category: 'Метаболические и ферментные',
     potencyRange: 'D4–D6 (функциональная заместительная проба)',
     ampouleRole: 'Корректор / органопрепарат (тестирует ресурс)',
-    imageSrc: '/anatomy/nosodes/diagnostic_vials.jpg',
+    imageSrc: './anatomy/nosodes/diagnostic_vials.jpg',
     imageAttribution: 'CSIRO / Wikimedia Commons · CC BY 3.0',
     purpose:
       'Оценка не токсина, а ДЕФИЦИТА пищеварительных секретов: позволяет точно отличить гипоацидный гастрит (нехватка HCl) от гиперацидности и подобрать точную ферментную поддержку по восстановлению слабой мышцы.',
@@ -261,7 +261,7 @@ export const NOSODES: NosodeProfile[] = [
     category: 'Органно-тканевые',
     potencyRange: 'D6–D12 (органный ресурс) · D30 (регуляция оси ГГН)',
     ampouleRole: 'Корректор / органопрепарат (тестирует ресурс)',
-    imageSrc: '/anatomy/nosodes/nosode_chest.jpg',
+    imageSrc: './anatomy/nosodes/nosode_chest.jpg',
     imageAttribution: 'Wellcome Collection · Wikimedia Commons · CC BY 4.0',
     purpose:
       'Дифференциация нейроэндокринного истощения (синдром усталости надпочечников, субклинический гипотиреоз, избыток кортизола) при слабости портняжной, нежной, подостной или длинных разгибателей спины.',

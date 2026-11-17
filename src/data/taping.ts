@@ -10,7 +10,7 @@ export const TAPING_APPLICATIONS: TapingApplicationProfile[] = [
     tapeCutForm: 'Y-полоса (обхват передней и задней порций) + I-коррекция головки плеча',
     directionRule:
       'Тонизирующий вектор: якорь ставится у ПРОКСИМАЛЬНОГО начала (ключица/акромион/ость лопатки) и ведётся к прикреплению (дельтовидная бугристость плечевой кости).',
-    imageSrc: '/anatomy/taping/kinesio_taping_diagram.png',
+    imageSrc: './anatomy/taping/kinesio_taping_diagram.png',
     imageAttribution: 'Wikimedia Commons · CC BY-SA 4.0',
     indications: [
       'Функциональная гипотония средней или передней дельтовидной мышцы по ММТ',
@@ -41,7 +41,7 @@ export const TAPING_APPLICATIONS: TapingApplicationProfile[] = [
     tapeCutForm: 'Две параллельные I-полосы вдоль паравертебральных столбов + горизонтальная декомпрессия',
     directionRule:
       'Расслабляющий вектор: наклеивается при максимальном физиологическом растяжении (пациент в наклоне вперёд) от ДИСТАЛЬНОГО прикрепления (крестец/гребень таза) вверх к грудопоясничному переходу.',
-    imageSrc: '/anatomy/taping/kt_back.jpg',
+    imageSrc: './anatomy/taping/kt_back.jpg',
     imageAttribution: 'Wikimedia Commons · CC BY-SA 4.0',
     indications: [
       'Гиперфасилитация (защитный спазм) разгибателей спины и квадратной мышцы поясницы',
@@ -71,7 +71,7 @@ export const TAPING_APPLICATIONS: TapingApplicationProfile[] = [
     tapeCutForm: 'Y-полоса вокруг надколенника + связочная I-полоса под надколенник',
     directionRule:
       'При коррекции бедренно-надколенникового сочленения ленты огибают надколенник в согнутом положении колена (45–60°), центрируя его скольжение без пережатия подколенной ямки.',
-    imageSrc: '/anatomy/taping/kinesio_knee_leg.jpg',
+    imageSrc: './anatomy/taping/kinesio_knee_leg.jpg',
     imageAttribution: 'Wikimedia Commons · CC BY 4.0',
     indications: [
       'Пателлофеморальный болевой синдром, «колено бегуна»',
@@ -101,7 +101,7 @@ export const TAPING_APPLICATIONS: TapingApplicationProfile[] = [
     tapeCutForm: 'Две веерные ленты (по 4–5 узких полос от одного цельного якоря 4 см)',
     directionRule:
       'Неразрезанный якорь (база) ВСЕГДА клеится проксимально — рядом с ближайшим чистым коллектором лимфатических узлов (подмышечные, паховые, подколенные, надключичные), а «щупальца» ведут дистально по зоне отёка.',
-    imageSrc: '/anatomy/taping/kinesio_taping_diagram.png',
+    imageSrc: './anatomy/taping/kinesio_taping_diagram.png',
     imageAttribution: 'Wikimedia Commons · CC BY-SA 4.0',
     indications: [
       'Локальный отёк, лимфостаз, подкожная гематома после ушибов или операций',
@@ -131,7 +131,7 @@ export const TAPING_APPLICATIONS: TapingApplicationProfile[] = [
     tapeCutForm: 'I- или Y-полоса от подошвенной стороны пятки до головки икроножной мышцы',
     directionRule:
       'Стопа выводится в тыльное сгибание (носок на себя), колено прямое. База ставится под пяткой, полоса идёт вверх по ахиллову сухожилию и раздваивается на медиальную и латеральную головки икры.',
-    imageSrc: '/anatomy/taping/kinesio_taping_2.jpg',
+    imageSrc: './anatomy/taping/kinesio_taping_2.jpg',
     imageAttribution: 'Wikimedia Commons · CC BY-SA 3.0',
     indications: [
       'Тендинопатия ахиллова сухожилия, утренняя боль в пятке (ПЗЛ)',
@@ -161,7 +161,7 @@ export const TAPING_APPLICATIONS: TapingApplicationProfile[] = [
     tapeCutForm: 'I-полосы «стремя» под свод стопы + лимфатическая разгрузка лодыжки',
     directionRule:
       'При уплощении свода и слабости задней большеберцовой мышцы «стремя» наклеивается с латерального края стопы под подошву вверх по внутренней лодыжке (приподнимая ладьевидную кость).',
-    imageSrc: '/anatomy/taping/kinesio_taping_1.jpg',
+    imageSrc: './anatomy/taping/kinesio_taping_1.jpg',
     imageAttribution: 'U.S. Air Force / Wikimedia Commons · Public Domain',
     indications: [
       'Восходящая дисфункция Глубинной фронтальной и Латеральной цепей от стопы',

@@ -29,7 +29,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'Вектор давления врача всегда прикладывается строго перпендикулярно оси конечности в конце физиологической амплитуды укладки (приблизив места прикрепления).',
         visualAid: {
-          src: '/anatomy/learning/muscle_spindle.png',
+          src: './anatomy/learning/muscle_spindle.png',
           caption: 'Схема мышечного веретена и афферентного миотатического рефлекса, оцениваемого при ММТ',
           attribution: 'Wikimedia Commons · CC BY 4.0',
         },
@@ -47,7 +47,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'Никогда не используйте индикаторную мышцу, не проверив её на способность к торможению (ингибиции) при сближении мышечных веретён.',
         visualAid: {
-          src: '/anatomy/mmt/mmt_psoas.jpg',
+          src: './anatomy/mmt/mmt_psoas.jpg',
           caption: 'Пример укладки и фиксации проксимального сегмента при тестировании подвздошно-поясничной мышцы',
           attribution: 'Wikimedia Commons · CC BY-SA 4.0',
         },
@@ -65,7 +65,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'Диагностический цикл ММТ: Исходный тест → Провокация / ТЛ → Коррекция → Обязательный ретест.',
         visualAid: {
-          src: '/anatomy/learning/sarcomere.svg',
+          src: './anatomy/learning/sarcomere.svg',
           caption: 'Структура саркомера и перекрытие актин-миозиновых мостиков при изометрическом удержании',
           attribution: 'Wikimedia Commons · CC BY-SA 3.0',
         },
@@ -180,7 +180,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'Различие углов вектора между ключичной и грудинной порциями БГМ принципиально: смещение вектора на 25° тестирует уже другой отдел и другой внутренний орган.',
         visualAid: {
-          src: '/anatomy/mmt/openstax_upper_limb.png',
+          src: './anatomy/mmt/openstax_upper_limb.png',
           caption: 'Анатомия большой грудной, дельтовидной мышц и плечевого пояса для точного выбора вектора ММТ',
           attribution: 'OpenStax Anatomy & Physiology 2e · CC BY 4.0',
         },
@@ -203,7 +203,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'При тесте подвздошно-поясничной мышцы если пациент заворачивает носок внутрь — в работу вместо psoas включается напрягатель широкой фасции бедра (TFL).',
         visualAid: {
-          src: '/anatomy/mmt/openstax_abdomen.png',
+          src: './anatomy/mmt/openstax_abdomen.png',
           caption: 'Топография пояснично-тазовых стабилизаторов и глубокой мускулатуры корпуса',
           attribution: 'OpenStax Anatomy & Physiology 2e · CC BY 4.0',
         },
@@ -226,7 +226,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'Всегда проверяйте симметричность теста слева и справа: односторонняя гипотония чаще связана с туннельным синдромом, фасеточным блоком или локальной травмой.',
         visualAid: {
-          src: '/anatomy/mmt/openstax_lower_leg.png',
+          src: './anatomy/mmt/openstax_lower_leg.png',
           caption: 'Мышечные компартменты голени: передняя большеберцовая и малоберцовые мышцы',
           attribution: 'OpenStax Anatomy & Physiology 2e · CC BY 4.0',
         },
@@ -395,7 +395,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'При гипертонусе задней или передней цепи ищите гипотоничную мышцу на антагонистической цепи или на другом конце этой же линии.',
         visualAid: {
-          src: '/anatomy/muscles_front_back.svg',
+          src: './anatomy/muscles_front_back.svg',
           caption: 'Передняя и задняя поверхностные линии мышечно-фасциального натяжения (вид спереди и сзади)',
           attribution: 'Wikimedia Commons · CC BY-SA',
         },
@@ -417,7 +417,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'Для дифференциации локальной боли в колене/тазе используйте ТЛ на контралатеральное плечо или стопу по ходу Спиральной линии.',
         visualAid: {
-          src: '/anatomy/mmt/openstax_pelvis_thigh.png',
+          src: './anatomy/mmt/openstax_pelvis_thigh.png',
           caption: 'Мышцы таза, широкая фасция бедра и латеральные стабилизаторы шага',
           attribution: 'OpenStax Anatomy & Physiology 2e · CC BY 4.0',
         },
@@ -438,7 +438,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'Перед коррекцией ВНЧС и шеи обязательно протестируйте дистальные звенья ГФЛ: заднюю большеберцовую, приводящие и подвздошно-поясничную мышцы.',
         visualAid: {
-          src: '/anatomy/mmt/openstax_head_chewing.png',
+          src: './anatomy/mmt/openstax_head_chewing.png',
           caption: 'Жевательная мускулатура и глубокие сгибатели как верхний полюс Глубинной фронтальной линии',
           attribution: 'OpenStax Anatomy & Physiology 2e · CC BY 4.0',
         },
@@ -592,7 +592,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'Двусторонняя гипотония индикаторной мышцы без локальной травмы почти всегда указывает на висцеральный, меридианный или биохимический уровень проблемы.',
         visualAid: {
-          src: '/anatomy/learning/vagus_nerve.jpg',
+          src: './anatomy/learning/vagus_nerve.jpg',
           caption: 'Блуждающий нерв и вегетативная висцеро-моторная связь желудка со скелетной мускулатурой',
           attribution: 'Wikimedia Commons · CC BY-SA 4.0',
         },
@@ -616,7 +616,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'Коррекцию цепей (ПЗЛ, ГФЛ, ЛЛ) всегда рациональнее начинать с освобождения диафрагмальных перекрёстков — иначе фасциальный спазм вернётся за несколько часов.',
         visualAid: {
-          src: '/anatomy/diaphragm.png',
+          src: './anatomy/diaphragm.png',
           caption: 'Анатомия грудобрюшной диафрагмы, медиальной дугообразной связки и контакта с поясничной мышцей',
           attribution: 'Gray’s Anatomy · Public Domain',
         },
@@ -638,7 +638,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'Если после НЛ-растирания и НВ-удержания мышца на ретесте остаётся сильной — висцерально-сосудистый контур сбалансирован.',
         visualAid: {
-          src: '/anatomy/internal_organs.svg',
+          src: './anatomy/internal_organs.svg',
           caption: 'Топография органов грудной и брюшной полостей относительно межреберий и рефлекторных зон Чапмена',
           attribution: 'Wikimedia Commons · Public Domain',
         },
@@ -789,7 +789,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'Всегда спрашивайте пациента: «В какие часы суток симптом усиливается или будит вас?». Даже фраза «с 6 до 8 утра тошнит и тянет под ложечкой» сразу выводит на ось Желудка (ST).',
         visualAid: {
-          src: '/anatomy/meridians_12.svg',
+          src: './anatomy/meridians_12.svg',
           caption: 'Схема 12 основных меридианов и 24-часового суточного ритма активности органов',
           attribution: 'Wikimedia Commons · CC BY-SA',
         },
@@ -826,7 +826,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'На ТЛ к правильной точке коррекции (например, ST-41 при утреннем желудке или PC-8/KI-6 при вегетативно-осевом срыве) слабая мышца мгновенно восстанавливает нормотонию.',
         visualAid: {
-          src: '/anatomy/acupuncture_body_chart.jpg',
+          src: './anatomy/acupuncture_body_chart.jpg',
           caption: 'Классический атлас расположения меридианов и точек акупунктуры на теле, кистях и стопах',
           attribution: 'Wikimedia Commons · Public Domain',
         },
@@ -980,7 +980,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'Правило приоритета: 1) Снять неврологическое переключение (KI-27) → 2) Оценить химию и висцеральный контур → 3) Провести ЭСР / меридианный баланс → 4) Закрепить структуру и цепи.',
         visualAid: {
-          src: '/anatomy/learning/autonomic_ns.png',
+          src: './anatomy/learning/autonomic_ns.png',
           caption: 'Симпатическая и парасимпатическая регуляция в интеграции Триады здоровья',
           attribution: 'Wikimedia Commons · CC0 Public Domain',
         },
@@ -1004,7 +1004,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'Завершённым считается только тот приём, где ретест подтвердил восстановление нормотонии и увеличение времени удержания без компенсаций.',
         visualAid: {
-          src: '/anatomy/mudras/finger_3079.jpg',
+          src: './anatomy/mudras/finger_3079.jpg',
           caption: 'Использование диагностической пальцевой мудры (Гьян / Структурная) при интегративном приёме и ретесте',
           attribution: 'Wikimedia Commons · CC BY-SA 3.0',
         },
@@ -1168,7 +1168,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'Если мышца не тормозится при сближении веретён в центре брюшка, проверьте локальный триггер, аппарат Гольджи в местах крепления и состояние суставных рецепторов.',
         visualAid: {
-          src: '/anatomy/neuro/neuromuscular_junction.png',
+          src: './anatomy/neuro/neuromuscular_junction.png',
           caption: 'Нервно-мышечный синапс и передача двигательного импульса на сарколемму',
           attribution: 'OpenStax / Wikimedia Commons · CC BY 4.0',
         },
@@ -1190,7 +1190,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'Всегда сопоставляйте быструю утомляемость по таймеру (≤3 с) и утрату реакции торможения, чтобы отличить вегетативное истощение от симпатической перегрузки.',
         visualAid: {
-          src: '/anatomy/learning/autonomic_ns.png',
+          src: './anatomy/learning/autonomic_ns.png',
           caption: 'Анатомия симпатической и парасимпатической иннервации внутренних органов и сосудов',
           attribution: 'Wikimedia Commons · CC0 Public Domain',
         },
@@ -1213,7 +1213,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'Трёхуровневый постуральный тест «Лёжа → Сидя → Стоя» мгновенно локализует этаж дисфункции: диски/таз (слабеет сидя) vs стопа/вестибулярка (слабеет стоя) vs химия/висцера (слаба во всех позах).',
         visualAid: {
-          src: '/anatomy/neuro/synapse_servier.png',
+          src: './anatomy/neuro/synapse_servier.png',
           caption: 'Синаптическая передача и нейромоторный контроль при смене гравитационной нагрузки',
           attribution: 'Servier Medical Art · CC BY-SA 3.0',
         },
@@ -1345,7 +1345,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'Никогда не тестируйте несколько нозодов одновременно в одной руке и держите ампулы вдали от телефонов и магнитов.',
         visualAid: {
-          src: '/anatomy/nosodes/glass_ampoules.jpg',
+          src: './anatomy/nosodes/glass_ampoules.jpg',
           caption: 'Стеклянные диагностические ампулы для информационно-биохимического тестирования в ММТ',
           attribution: 'Wellcome Collection · CC BY 4.0',
         },
@@ -1367,7 +1367,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'Критерий верного наклеивания — не «красивый рисунок», а мгновенный ретест целевой мышцы с удержанием ≥5 секунд и исчезновением боли при движении.',
         visualAid: {
-          src: '/anatomy/taping/kinesio_taping_diagram.png',
+          src: './anatomy/taping/kinesio_taping_diagram.png',
           caption: 'Схемы нарезки кинезиотейпов: связочная стабилизация и лимфатический веер',
           attribution: 'Wikimedia Commons · CC BY-SA 4.0',
         },
@@ -1385,7 +1385,7 @@ export const LEARNING_CURRICULUM: LearningStage[] = [
         clinicalRule:
           'Малейшие признаки головокружения, нистагма, пареза или острой корешковой иррадиации при предварительном тесте — абсолютный запрет на траст HVLA (замена на мягкие МЭТ/релизацию).',
         visualAid: {
-          src: '/anatomy/neuro/vertebral_column.png',
+          src: './anatomy/neuro/vertebral_column.png',
           caption: 'Анатомия отделов позвоночника и суставных плоскостей для расчёта вектора мобилизации и траста',
           attribution: 'Henry Gray Anatomy · Public Domain',
         },

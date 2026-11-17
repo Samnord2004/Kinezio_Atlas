@@ -716,7 +716,7 @@ export default function App() {
           className="inline-flex items-center gap-2.5 text-lg font-bold tracking-tight text-slate-900 whitespace-nowrap shrink-0 cursor-pointer font-display"
         >
           <img
-            src="/assets/aistudio/logo_f7cf1eaa.png"
+            src="./assets/aistudio/logo_f7cf1eaa.png"
             alt="Логотип КинезиоАтлас"
             className="w-8 h-8 object-contain shrink-0"
           />
@@ -844,114 +844,94 @@ export default function App() {
         </div>
       </div>
 
-      {/* Intuitive Clinical Workflow & Active Patient Strip */}
-      <div className="print:hidden bg-slate-100/80 border-b border-slate-200 px-4 sm:px-6 py-2">
-        <div className="max-w-[1440px] mx-auto flex flex-wrap items-center justify-between gap-2 text-xs">
-          {activePatient ? (
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="inline-flex items-center gap-1.5 font-semibold text-blue-800">
-                <UserCheck className="w-3.5 h-3.5" />
-                Активный пациент: {activePatient.fullName}
-              </span>
-              {activePatient.cardNumber && (
-                <span className="font-mono text-slate-500">({activePatient.cardNumber})</span>
-              )}
-              <button
-                type="button"
-                onClick={() => setActiveTab('patients')}
-                className="text-blue-700 hover:underline font-medium cursor-pointer"
-              >
-                Открыть карту
-              </button>
-              <span className="text-slate-300" aria-hidden="true">
-                |
-              </span>
-              <button
-                type="button"
-                onClick={() => handleStartNewVisit(activePatient.id)}
-                className="inline-flex items-center gap-1 text-emerald-700 hover:underline font-medium cursor-pointer"
-              >
-                <ClipboardCheck className="w-3.5 h-3.5" />
-                <span>Начать новый приём</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActivePatientId(null)}
-                className="p-0.5 text-slate-400 hover:text-slate-700 cursor-pointer"
-                title="Сбросить выбор активного пациента"
-                aria-label="Сбросить выбор активного пациента"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-wrap items-center gap-2 text-slate-600">
-              <span className="font-semibold text-slate-800">Маршрут приёма:</span>
-              <button
-                type="button"
-                onClick={() => setActiveTab('patients')}
-                className="hover:text-blue-700 cursor-pointer"
-              >
-                1. Пациенты ({patients.length})
-              </button>
-              <span className="text-slate-300">→</span>
-              <button
-                type="button"
-                onClick={() => setActiveTab('symptoms')}
-                className="hover:text-blue-700 cursor-pointer"
-              >
-                2. Симптоматика
-              </button>
-              <span className="text-slate-300">→</span>
-              <button
-                type="button"
-                onClick={() => setActiveTab('timeline')}
-                className="hover:text-blue-700 cursor-pointer"
-              >
-                3. Шкала процессов
-              </button>
-              <span className="text-slate-300">→</span>
-              <button
-                type="button"
-                onClick={() => setActiveTab('intake')}
-                className="hover:text-blue-700 cursor-pointer"
-              >
-                4. Опросник, Карта боли и ММТ
-              </button>
-              <span className="text-slate-300">→</span>
-              <button
-                type="button"
-                onClick={() => setActiveTab('meridians')}
-                className="hover:text-blue-700 cursor-pointer"
-              >
-                5. Меридианы и точки ({ACUPOINTS.length})
-              </button>
-            </div>
-          )}
+      {/* Intuitive Clinical Workflow & Active Patient Strip (CRM block only) */}
+      {activeBlock === 'crm' && (
+        <div className="print:hidden bg-slate-100/80 border-b border-slate-200 px-4 sm:px-6 py-2">
+          <div className="max-w-[1440px] mx-auto flex flex-wrap items-center justify-between gap-2 text-xs">
+            {activePatient ? (
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="inline-flex items-center gap-1.5 font-semibold text-blue-800">
+                  <UserCheck className="w-3.5 h-3.5" />
+                  Активный пациент: {activePatient.fullName}
+                </span>
+                {activePatient.cardNumber && (
+                  <span className="font-mono text-slate-500">({activePatient.cardNumber})</span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('patients')}
+                  className="text-blue-700 hover:underline font-medium cursor-pointer"
+                >
+                  Открыть карту
+                </button>
+                <span className="text-slate-300" aria-hidden="true">
+                  |
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleStartNewVisit(activePatient.id)}
+                  className="inline-flex items-center gap-1 text-emerald-700 hover:underline font-medium cursor-pointer"
+                >
+                  <ClipboardCheck className="w-3.5 h-3.5" />
+                  <span>Начать новый приём</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivePatientId(null)}
+                  className="p-0.5 text-slate-400 hover:text-slate-700 cursor-pointer"
+                  title="Сбросить выбор активного пациента"
+                  aria-label="Сбросить выбор активного пациента"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2 text-slate-600">
+                <span className="font-semibold text-slate-800">Маршрут приёма:</span>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('patients')}
+                  className="hover:text-blue-700 cursor-pointer"
+                >
+                  1. Пациенты ({patients.length})
+                </button>
+                <span className="text-slate-300">→</span>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('symptoms')}
+                  className="hover:text-blue-700 cursor-pointer"
+                >
+                  2. Симптоматика
+                </button>
+                <span className="text-slate-300">→</span>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('timeline')}
+                  className="hover:text-blue-700 cursor-pointer"
+                >
+                  3. Шкала процессов
+                </button>
+                <span className="text-slate-300">→</span>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('intake')}
+                  className="hover:text-blue-700 cursor-pointer"
+                >
+                  4. Опросник, Карта боли и ММТ
+                </button>
+              </div>
+            )}
 
-          <div className="hidden sm:flex items-center gap-3 text-[11px] text-slate-500">
-            <button
-              type="button"
-              onClick={() => {
-                setActivePlate('meridians');
-                setVisibleLayers((prev) => ({ ...prev, acupoints: true }));
-                setActiveTab('atlas');
-              }}
-              className="text-blue-700 hover:underline font-medium cursor-pointer"
-            >
-              Карта точек на теле
-            </button>
-            <span className="text-slate-300" aria-hidden="true">
-              ·
-            </span>
-            <span>Карт в базе: {patients.length}</span>
-            <span className="text-slate-300" aria-hidden="true">
-              ·
-            </span>
-            <span>Приёмов: {visits.length}</span>
+            <div className="hidden sm:flex items-center gap-3 text-[11px] text-slate-500">
+              <span>Карт в базе: {patients.length}</span>
+              <span className="text-slate-300" aria-hidden="true">
+                ·
+              </span>
+              <span>Приёмов: {visits.length}</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content Area */}
       <main className="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 py-5">

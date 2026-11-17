@@ -6,7 +6,7 @@ export const MUDRAS: MudraProfile[] = [
     name: 'Мудра структурного приоритета (Гьян / Чин-мудра)',
     sanskritName: 'Jnana / Chin Mudra',
     category: 'Структурная',
-    imageSrc: '/anatomy/mudras/finger_3079.jpg',
+    imageSrc: './anatomy/mudras/finger_3079.jpg',
     imageAttribution: 'Wikimedia Commons · CC BY-SA 3.0',
     fingerPosition:
       'Кончик большого пальца (I) мягко соединён с подушечкой указательного пальца (II) в замкнутое кольцо; средний, безымянный и мизинец свободно выпрямлены.',
@@ -37,7 +37,7 @@ export const MUDRAS: MudraProfile[] = [
     name: 'Мудра эмоциональной коррекции (Ваю-мудра)',
     sanskritName: 'Vayu Mudra',
     category: 'Эмоциональная',
-    imageSrc: '/anatomy/mudras/finger_3066.jpg',
+    imageSrc: './anatomy/mudras/finger_3066.jpg',
     imageAttribution: 'Wikimedia Commons · CC BY-SA 3.0',
     fingerPosition:
       'Указательный палец (II) согнут и упирается подушечкой в основание большого пальца (I), большой палец мягко прижимает его среднюю фалангу; остальные три пальца прямые.',
@@ -69,7 +69,7 @@ export const MUDRAS: MudraProfile[] = [
     name: 'Энергетическая мудра каналов (Шунья / Акаша-мудра)',
     sanskritName: 'Shunya / Akasha Mudra',
     category: 'Энергетическая',
-    imageSrc: '/anatomy/mudras/finger_3082.jpg',
+    imageSrc: './anatomy/mudras/finger_3082.jpg',
     imageAttribution: 'Wikimedia Commons · CC BY-SA 3.0',
     fingerPosition:
       'Подушечка большого пальца (I) мягко соединена с подушечкой среднего пальца (III) в кольцо (в Шунья-мудре средний палец сгибается к основанию большого и прижимается им); указательный, безымянный и мизинец выпрямлены.',
@@ -99,7 +99,7 @@ export const MUDRAS: MudraProfile[] = [
     name: 'Метаболическая / химическая мудра (Сурья-мудра)',
     sanskritName: 'Surya / Agni Mudra',
     category: 'Химическая',
-    imageSrc: '/anatomy/mudras/finger_3097.jpg',
+    imageSrc: './anatomy/mudras/finger_3097.jpg',
     imageAttribution: 'Wikimedia Commons · CC BY-SA 3.0',
     fingerPosition:
       'Безымянный палец (IV) согнут к основанию большого пальца и мягко прижат его подушечкой; указательный, средний и мизинец выпрямлены.',
@@ -129,7 +129,7 @@ export const MUDRAS: MudraProfile[] = [
     name: 'Висцеральная мудра элемента Земля (Притхви-мудра)',
     sanskritName: 'Prithvi Mudra',
     category: 'Висцеральная',
-    imageSrc: '/anatomy/mudras/prithvi_mudra.jpg',
+    imageSrc: './anatomy/mudras/prithvi_mudra.jpg',
     imageAttribution: 'Wikimedia Commons · CC BY-SA 3.0',
     fingerPosition:
       'Подушечка большого пальца (I) мягко соединена с подушечкой безымянного пальца (IV); указательный, средний и мизинец свободно выпрямлены.',
@@ -159,7 +159,7 @@ export const MUDRAS: MudraProfile[] = [
     name: 'Дренажно-детоксикационная мудра (Апана-мудра)',
     sanskritName: 'Apana Mudra',
     category: 'Висцеральная',
-    imageSrc: '/anatomy/mudras/apana_mudra.svg',
+    imageSrc: './anatomy/mudras/apana_mudra.svg',
     imageAttribution: 'Wikimedia Commons · CC BY-SA 4.0',
     fingerPosition:
       'Кончики большого (I), среднего (III) и безымянного (IV) пальцев сведены вместе; указательный (II) и мизинец (V) свободно выпрямлены.',
@@ -189,7 +189,7 @@ export const MUDRAS: MudraProfile[] = [
     name: 'Центрирующая мудра срединной оси (Анджали-мудра)',
     sanskritName: 'Anjali Mudra',
     category: 'Балансирующая',
-    imageSrc: '/anatomy/mudras/anjali_mudra.jpg',
+    imageSrc: './anatomy/mudras/anjali_mudra.jpg',
     imageAttribution: 'Wikimedia Commons · CC BY-SA 3.0',
     fingerPosition:
       'Обе ладони и одноимённые пальцы симметрично сомкнуты перед центром грудины (в проекции точки CV-17 Тань-чжун), большие пальцы легко касаются грудины.',
@@ -219,7 +219,7 @@ export const MUDRAS: MudraProfile[] = [
     name: 'Пальцевая диагностика и коррекция Джин Шин (Jin Shin)',
     sanskritName: 'Jin Shin Finger Hold',
     category: 'Балансирующая',
-    imageSrc: '/anatomy/mudras/jin_shin_mudra.jpg',
+    imageSrc: './anatomy/mudras/jin_shin_mudra.jpg',
     imageAttribution: 'Wikimedia Commons · CC BY-SA 4.0',
     fingerPosition:
       'Мягкий последовательный обхват каждого пальца одной руки всей ладонью противоположной руки: Большой (Земля/тревога), Указательный (Вода/страх), Средний (Дерево/гнев), Безымянный (Металл/печаль), Мизинец (Огонь/сердце).',
