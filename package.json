@@ -1,0 +1,100 @@
+{
+  "name": "kinezioatlas",
+  "private": true,
+  "version": "1.2.0",
+  "description": "КинезиоАтлас — клинический атлас ММТ, остеопатии, миофасциальных цепей и прикладной кинезиологии",
+  "main": "electron/main.cjs",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port=3000 --host=0.0.0.0",
+    "build": "vite build",
+    "build:electron": "VITE_ELECTRON=1 vite build",
+    "dist:mac": "VITE_ELECTRON=1 vite build && npx --yes electron-builder@25.1.8 --mac dmg zip",
+    "electron:start": "VITE_ELECTRON=1 vite build && npx --yes electron@35.0.0 .",
+    "preview": "vite preview --host 0.0.0.0 --port 3000",
+    "serve:local": "vite build && vite preview --host 0.0.0.0 --port 3000",
+    "clean": "rm -rf dist release server.js",
+    "lint": "tsc --noEmit"
+  },
+  "build": {
+    "appId": "com.kinezioatlas.desktop",
+    "productName": "КинезиоАтлас",
+    "electronVersion": "35.0.0",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.medical",
+      "icon": "public/pwa-512x512.png",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "universal"
+          ]
+        }
+      ]
+    },
+    "dmg": {
+      "title": "КинезиоАтлас ${version}",
+      "format": "UDZO",
+      "window": {
+        "width": 540,
+        "height": 380
+      },
+      "contents": [
+        {
+          "x": 140,
+          "y": 190
+        },
+        {
+          "x": 400,
+          "y": 190,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "@google/genai": "^2.4.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/three": "^0.187.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "lucide-react": "^0.546.0",
+    "motion": "^12.23.24",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1",
+    "three": "^0.187.0",
+    "vite": "^8.3.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "autoprefixer": "^10.4.21",
+    "esbuild": "^0.25.0",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.21.0",
+    "typescript": "^7.0.2",
+    "vite-plugin-pwa": "^2.0.0"
+  }
+}

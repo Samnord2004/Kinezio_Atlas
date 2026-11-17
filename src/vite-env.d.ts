@@ -1,0 +1,41 @@
+/// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/client" />
+
+declare const __APP_VERSION__: string;
+
+interface KinezioDesktopBridge {
+  isElectron: boolean;
+  getEnvironment: () => Promise<{
+    platform: string;
+    arch: string;
+    appVersion: string;
+    userDataPath: string;
+    machineLabel: string;
+    detectedCloudFolders: Array<{ provider: 'yandex' | 'google'; label: string; path: string }>;
+    paths: Record<string, string>;
+  }>;
+  pickDirectory: (role: string, defaultPath?: string) => Promise<{ canceled: boolean; path?: string }>;
+  setDirectoryPath: (role: string, dirPath: string) => Promise<boolean>;
+  clearDirectoryPath: (role: string) => Promise<boolean>;
+  writeTextFile: (dirPath: string, filename: string, content: string) => Promise<{ ok: boolean; fullPath?: string; error?: string }>;
+  readTextFile: (dirPath: string, filename: string) => Promise<{ ok: boolean; content?: string; error?: string }>;
+  listFiles: (dirPath: string) => Promise<Array<{ filename: string; sizeBytes: number; modifiedAt: string }>>;
+  openFolder: (dirPath: string) => Promise<boolean>;
+  openExternal: (url: string) => Promise<boolean>;
+  checkForUpdates: (feedUrl: string) => Promise<{
+    ok: boolean;
+    manifest?: {
+      version: string;
+      releaseDate?: string;
+      notes?: string[];
+      dmgUrl?: string;
+      zipUrl?: string;
+      releasesPageUrl?: string;
+    };
+    error?: string;
+  }>;
+}
+
+interface Window {
+  kinezioDesktop?: KinezioDesktopBridge;
+}
