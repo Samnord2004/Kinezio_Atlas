@@ -1178,6 +1178,24 @@ export const LocalHostingModal: React.FC<LocalHostingModalProps> = ({
                 </div>
               </div>
 
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-slate-800 leading-relaxed">
+                <div className="font-semibold text-slate-900">
+                  Перед запуском команд в Терминале macOS:
+                </div>
+                <ol className="list-decimal pl-5 space-y-1 text-slate-700">
+                  <li>
+                    Убедитесь, что установлен <strong>Node.js 20+</strong> (проверка:{' '}
+                    <code>node -v</code>).
+                  </li>
+                  <li>
+                    Перейдите в распакованную папку проекта, где лежит файл{' '}
+                    <code>package.json</code> (например: <code>cd ~/Downloads/kinezioatlas</code>).
+                    Запуск из домашней папки <code>~</code> без перехода в проект вызовет ошибку{' '}
+                    <code>npm error</code>.
+                  </li>
+                </ol>
+              </div>
+
               <div className="space-y-3">
                 {MAC_COMMANDS.map((item) => (
                   <div
