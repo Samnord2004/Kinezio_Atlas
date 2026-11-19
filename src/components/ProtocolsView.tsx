@@ -115,7 +115,7 @@ export const ProtocolsView: React.FC<ProtocolsViewProps> = ({ onOpenInAtlas }) =
           {/* Quick Diaphragm Release Sequence Summary */}
           <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2.5">
             <h3 className="text-sm font-semibold text-slate-900">
-              Иерархия проверки 5 диафрагм тела
+              Иерархия проверки 7 диафрагм тела
             </h3>
             <p className="text-xs text-slate-500">
               Нажмите на любую диафрагму для перехода к её связям на анатомической схеме

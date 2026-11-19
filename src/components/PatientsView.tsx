@@ -13,9 +13,12 @@ import {
   IntakeDomain,
   PatientProfile,
   PatientVisitRecord,
+  PostureAssessmentRecord,
   QuestionSeverity,
 } from '../types/atlas';
-import { PAIN_MARKER_META } from '../utils/painMapRecommendations';
+import { BODY_POSTURE_META, PAIN_MARKER_META } from '../utils/painMapRecommendations';
+import { POSTURE_PHASE_META, POSTURE_VIEW_META } from '../utils/postureAnalysisEngine';
+import { PosturePhotoAnalyzer } from './PosturePhotoAnalyzer';
 import { describeBodySide } from '../data/musclePlateCoords';
 import {
   ClinicalExportInput,
@@ -26,6 +29,9 @@ import {
 import { PatientDatabaseSnapshot } from '../utils/patientDatabase';
 import {
   Calendar,
+  Camera,
+  ChevronDown,
+  ChevronUp,
   Download,
   Edit3,
   FileDown,
@@ -134,6 +140,7 @@ function buildExportInputFromVisit(
     muscleQueue: visit.muscleQueue,
     mmtRecords: visit.mmtRecords,
     painMap: visit.painMap ?? patient.painMap,
+    postureAssessments: visit.postureAssessments ?? patient.postureAssessments,
     stats: { tested, abnormal, corrected },
   };
 }
@@ -161,6 +168,7 @@ export const PatientsView: React.FC<PatientsViewProps> = ({
   const [anamnesis, setAnamnesis] = useState('');
   const [confirmDeletePatientId, setConfirmDeletePatientId] = useState<string | null>(null);
   const [confirmDeleteVisitId, setConfirmDeleteVisitId] = useState<string | null>(null);
+  const [isPostureAnalyzerOpen, setIsPostureAnalyzerOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -230,6 +238,26 @@ export const PatientsView: React.FC<PatientsViewProps> = ({
     onSelectPatient(saved.id);
     setIsEditingForm(false);
     showStatus(editingId ? 'Карта пациента обновлена' : 'Новый пациент добавлен в базу');
+  };
+
+  const handleSavePatientPostureRecord = async (record: PostureAssessmentRecord) => {
+    if (!selectedPatient) return;
+    const current = selectedPatient.postureAssessments ?? [];
+    const exists = current.some((r) => r.id === record.id);
+    const nextList = exists
+      ? current.map((r) => (r.id === record.id ? record : r))
+      : [record, ...current];
+    const { id: _id, createdAt: _created, updatedAt: _updated, ...rest } = selectedPatient;
+    await onSavePatient({ ...rest, postureAssessments: nextList }, selectedPatient.id);
+    showStatus('Фото-анализ положения тела сохранён в карту пациента');
+  };
+
+  const handleDeletePatientPostureRecord = async (recordId: string) => {
+    if (!selectedPatient) return;
+    const nextList = (selectedPatient.postureAssessments ?? []).filter((r) => r.id !== recordId);
+    const { id: _id, createdAt: _created, updatedAt: _updated, ...rest } = selectedPatient;
+    await onSavePatient({ ...rest, postureAssessments: nextList }, selectedPatient.id);
+    showStatus('Замер фото-анализа удалён из карты пациента');
   };
 
   const handleBackupJson = () => {
@@ -694,6 +722,8 @@ export const PatientsView: React.FC<PatientsViewProps> = ({
                         const m = MUSCLES.find((item) => item.id === pt.primaryMuscleId);
                         const zName =
                           ANATOMICAL_ZONES.find((z) => z.id === pt.zoneId)?.shortName ?? pt.zoneId;
+                        const postureMeta = pt.posture ? BODY_POSTURE_META[pt.posture] : null;
+                        const isConstant = pt.triggerBehavior === 'constant_all_postures';
                         return (
                           <div
                             key={pt.id}
@@ -705,6 +735,14 @@ export const PatientsView: React.FC<PatientsViewProps> = ({
                             <span className="font-medium text-slate-800">
                               {m?.name ?? zName}
                             </span>{' '}
+                            {postureMeta && (
+                              <span className="text-slate-600">· {postureMeta.label}</span>
+                            )}{' '}
+                            {isConstant && (
+                              <span className="px-1 py-0.5 rounded bg-violet-100 text-violet-800 font-mono font-semibold text-[10px]">
+                                НС!
+                              </span>
+                            )}{' '}
                             <span className="text-slate-400 font-mono tabular-nums">
                               ({describeBodySide(pt.x)}, {pt.x}:{pt.y})
                             </span>
@@ -714,6 +752,107 @@ export const PatientsView: React.FC<PatientsViewProps> = ({
                     </div>
                   </div>
                 )}
+
+                {/* Posture & Limb Photo Angle Analyzer (Before / After) inside Patient Card */}
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Camera className="w-4 h-4 text-blue-700 shrink-0" />
+                        <span className="text-xs font-semibold text-slate-900">
+                          Анализ углов тела и конечностей по фото (До / После)
+                        </span>
+                        <span className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-[11px] font-mono tabular-nums text-slate-700">
+                          {selectedPatient.postureAssessments?.length ?? 0}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Лазерная вертикаль, отклонения сегментов в °, векторы коррекции и сравнение
+                        динамики До / После для корректировки тактики врача.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsPostureAnalyzerOpen((v) => !v)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-white border border-blue-200 hover:bg-blue-50 rounded-lg cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                      {isPostureAnalyzerOpen ? (
+                        <>
+                          <ChevronUp className="w-3.5 h-3.5" />
+                          <span>Свернуть анализатор</span>
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-3.5 h-3.5" />
+                          <span>
+                            {(selectedPatient.postureAssessments?.length ?? 0) > 0
+                              ? 'Открыть сравнение До / После'
+                              : 'Добавить фото и измерить углы'}
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {!isPostureAnalyzerOpen &&
+                    selectedPatient.postureAssessments &&
+                    selectedPatient.postureAssessments.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {selectedPatient.postureAssessments.slice(0, 4).map((rec) => {
+                          const maxDev =
+                            rec.angles.length > 0
+                              ? rec.angles.reduce(
+                                  (best, cur) =>
+                                    cur.absAngleDeg > best.absAngleDeg ? cur : best,
+                                  rec.angles[0]
+                                )
+                              : undefined;
+                          return (
+                            <div
+                              key={rec.id}
+                              className="p-2.5 bg-white border border-slate-200 rounded-lg flex items-center justify-between gap-2 text-xs"
+                            >
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span
+                                    className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border ${POSTURE_PHASE_META[rec.phase].badgeClass}`}
+                                  >
+                                    {POSTURE_PHASE_META[rec.phase].label}
+                                  </span>
+                                  <span className="font-semibold text-slate-900 truncate">
+                                    {POSTURE_VIEW_META[rec.view].shortLabel}
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-slate-500 mt-0.5 truncate">
+                                  {formatDisplayDate(rec.capturedAt)}
+                                  {maxDev
+                                    ? ` · ${maxDev.label}: ${maxDev.angleDeg > 0 ? '+' : ''}${maxDev.angleDeg}°`
+                                    : ''}
+                                </div>
+                              </div>
+                              <span className="text-[11px] font-mono tabular-nums text-slate-600 shrink-0">
+                                Лазер {rec.laserCalibration.verticalOffsetDeg > 0 ? '+' : ''}
+                                {rec.laserCalibration.verticalOffsetDeg}°
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                  {isPostureAnalyzerOpen && (
+                    <div className="pt-1">
+                      <PosturePhotoAnalyzer
+                        assessments={selectedPatient.postureAssessments ?? []}
+                        onSaveAssessment={handleSavePatientPostureRecord}
+                        onDeleteAssessment={handleDeletePatientPostureRecord}
+                        patientId={selectedPatient.id}
+                        compactMode
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Visit History */}
@@ -728,7 +867,7 @@ export const PatientsView: React.FC<PatientsViewProps> = ({
                 {selectedPatientVisits.length === 0 ? (
                   <div className="p-8 text-center space-y-3">
                     <p className="text-xs text-slate-500">
-                      У этого пациента ещё нет сохранённых приёмов. Начните сеанс «Опросник ММТ» и
+                      У этого пациента ещё нет сохранённых приёмов. Начните сеанс «Анамнез и ММТ» и
                       нажмите «Сохранить в карту пациента».
                     </p>
                     <button
@@ -790,6 +929,11 @@ export const PatientsView: React.FC<PatientsViewProps> = ({
                               {v.painMap && v.painMap.length > 0 && (
                                 <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
                                   Точек боли: {v.painMap.length}
+                                </span>
+                              )}
+                              {v.postureAssessments && v.postureAssessments.length > 0 && (
+                                <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200">
+                                  Фото-анализ: {v.postureAssessments.length}
                                 </span>
                               )}
                             </div>

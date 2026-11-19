@@ -1,7 +1,7 @@
 {
   "name": "kinezioatlas",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.4.0",
   "description": "КинезиоАтлас — клинический атлас ММТ, остеопатии, миофасциальных цепей и прикладной кинезиологии",
   "main": "electron/main.cjs",
   "type": "module",
@@ -77,6 +77,7 @@
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
+    "@huggingface/transformers": "^4.3.2",
     "@tailwindcss/vite": "^4.3.3",
     "@types/three": "^0.187.0",
     "@vitejs/plugin-react": "^6.1.1",

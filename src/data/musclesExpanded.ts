@@ -136,7 +136,7 @@ export const EXPANDED_MUSCLES: Muscle[] = [
     },
     nutrients: ['Магний', 'Витамины группы B', 'Йод и Селен (поддержка щитовидной зоны)', 'Цинк'],
     organIds: ['sinuses', 'stomach', 'heart', 'lungs'],
-    diaphragmIds: ['hyoid-thoracic-inlet', 'cranial-tentorium', 'thoracoabdominal'],
+    diaphragmIds: ['oral-diaphragm', 'hyoid-thoracic-inlet', 'cranial-tentorium', 'thoracoabdominal'],
     meridianIds: ['conception', 'stomach', 'heart', 'kidney'],
     correctionSteps: [
       {
@@ -1016,7 +1016,7 @@ export const EXPANDED_MUSCLES: Muscle[] = [
     },
     nutrients: ['Магний', 'Коллаген / Кремний / Витамин C', 'Витамин D3', 'Цинк'],
     organIds: ['urogenital', 'large-intestine', 'kidneys'],
-    diaphragmIds: ['pelvic-floor', 'thoracoabdominal', 'cranial-tentorium'],
+    diaphragmIds: ['pelvic-floor', 'urogenital-diaphragm', 'thoracoabdominal', 'cranial-tentorium'],
     meridianIds: ['conception', 'governing', 'kidney', 'bladder'],
     correctionSteps: [
       {
@@ -1072,7 +1072,7 @@ export const EXPANDED_MUSCLES: Muscle[] = [
     },
     nutrients: ['Магний', 'Витамин B1, B12', 'Цинк'],
     organIds: ['urogenital', 'large-intestine'],
-    diaphragmIds: ['pelvic-floor'],
+    diaphragmIds: ['pelvic-floor', 'urogenital-diaphragm'],
     meridianIds: ['bladder', 'gallbladder', 'kidney'],
     correctionSteps: [
       {
@@ -1236,7 +1236,7 @@ export const EXPANDED_MUSCLES: Muscle[] = [
     },
     nutrients: ['Витамин E', 'Ниацин (витамин B3)', 'Магний', 'Цинк'],
     organIds: ['urogenital', 'heart', 'kidneys'],
-    diaphragmIds: ['pelvic-floor', 'thoracoabdominal'],
+    diaphragmIds: ['pelvic-floor', 'urogenital-diaphragm', 'thoracoabdominal'],
     meridianIds: ['liver', 'kidney', 'pericardium', 'spleen'],
     correctionSteps: [
       {

@@ -4,12 +4,17 @@ import {
   ANATOMICAL_DIVISIONS,
   ANATOMICAL_SIDE_META,
   ANATOMICAL_ZONES,
+  BONES,
   DIAPHRAGMS,
+  FASCIAS,
+  JOINTS,
   MERIDIANS,
   MUSCLES,
   MYOFASCIAL_CHAINS,
   NEURO_PROFILES,
   ORGANS,
+  TENDONS,
+  VESSELS,
   getMuscleSide,
   getOrganSide,
 } from './data';
@@ -21,6 +26,7 @@ import {
   PatientComplaintEvent,
   PatientProfile,
   PatientVisitRecord,
+  PostureAssessmentRecord,
   SelectedEntity,
 } from './types/atlas';
 import {
@@ -99,7 +105,18 @@ type WorkspaceTab =
   | 'mmt'
   | 'trusts'
   | 'craniosacral';
-type SidebarCategory = 'muscle' | 'chain' | 'organ' | 'diaphragm' | 'meridian' | 'neuro';
+type SidebarCategory =
+  | 'muscle'
+  | 'chain'
+  | 'organ'
+  | 'diaphragm'
+  | 'meridian'
+  | 'neuro'
+  | 'fascia'
+  | 'tendon'
+  | 'joint'
+  | 'bone'
+  | 'vessel';
 
 interface NavBlockDefinition {
   id: WorkspaceBlock;
@@ -113,9 +130,9 @@ const NAV_BLOCKS: ReadonlyArray<NavBlockDefinition> = [
     label: 'CRM',
     items: [
       { id: 'patients', label: 'Пациенты' },
-      { id: 'intake', label: 'Опросник' },
+      { id: 'intake', label: 'Анамнез' },
       { id: 'timeline', label: 'Шкала жалоб' },
-      { id: 'symptoms', label: 'Симптомы' },
+      { id: 'symptoms', label: 'Справочник клинических жалоб' },
     ],
   },
   {
@@ -231,7 +248,12 @@ export default function App() {
   const [zoneFilter, setZoneFilter] = useState<AnatomicalZoneId | 'all'>('all');
   const [sideFilter, setSideFilter] = useState<AnatomicalSide | 'all'>('all');
   const [sidebarCategory, setSidebarCategory] = useState<SidebarCategory>('muscle');
+  const [fasciaLayerFilter, setFasciaLayerFilter] = useState<
+    'all' | 'superficial' | 'deep' | 'visceral'
+  >('all');
+  const [jointSizeFilter, setJointSizeFilter] = useState<'all' | 'major' | 'small'>('all');
   const [sidebarSearch, setSidebarSearch] = useState('');
+  const [visibleSidebarLimit, setVisibleSidebarLimit] = useState(80);
 
   // Open-source anatomical plate state
   const [isStageExpanded, setIsStageExpanded] = useState(false);
@@ -243,6 +265,11 @@ export default function App() {
     diaphragms: true,
     acupoints: true,
     chains: true,
+    fascias: false,
+    tendons: false,
+    joints: false,
+    bones: false,
+    vessels: false,
   });
 
   // Global search, zone classifier & local hosting modal state
@@ -394,6 +421,7 @@ export default function App() {
           fullName: autoName,
           cardNumber: `К-${String(patients.length + 1).padStart(3, '0')}`,
           painMap: visitData.painMap,
+          postureAssessments: visitData.postureAssessments,
           createdAt: now,
           updatedAt: now,
         };
@@ -408,6 +436,10 @@ export default function App() {
             ...targetPatient,
             painMap:
               visitData.painMap !== undefined ? visitData.painMap : targetPatient.painMap,
+            postureAssessments:
+              visitData.postureAssessments !== undefined
+                ? visitData.postureAssessments
+                : targetPatient.postureAssessments,
             updatedAt: now,
           };
           await savePatientProfile(touchedPatient);
@@ -487,16 +519,50 @@ export default function App() {
     [patients]
   );
 
+  const handleSavePatientPostureAssessments = useCallback(
+    async (patientId: string, assessments: PostureAssessmentRecord[]) => {
+      const target = patients.find((p) => p.id === patientId);
+      if (!target) return;
+      const updated: PatientProfile = {
+        ...target,
+        postureAssessments: assessments,
+        updatedAt: new Date().toISOString(),
+      };
+      await savePatientProfile(updated);
+      setPatients((prev) => [updated, ...prev.filter((p) => p.id !== updated.id)]);
+    },
+    [patients]
+  );
+
   const syncPlateForEntity = useCallback((entity: SelectedEntity, switchPlate: boolean) => {
+    const CORE_HEAD_IDS = new Set([
+      'temporalis',
+      'masseter',
+      'lateral-pterygoid',
+      'medial-pterygoid',
+      'suboccipitals',
+    ]);
+    const CORE_NECK_IDS = new Set([
+      'suprahyoid-infrahyoid',
+      'scm',
+      'scalenes',
+      'deep-neck-flexors',
+      'cervical-extensors',
+      'levator-scapulae',
+    ]);
+
     if (entity.type === 'muscle') {
       const m = MUSCLES.find((item) => item.id === entity.id);
       if (switchPlate && m) {
-        if (m.zone === 'head') {
+        if (CORE_HEAD_IDS.has(m.id)) {
           setActivePlate('head');
-        } else if (m.zone === 'cervical' && m.id !== 'upper-trapezius') {
+        } else if (CORE_NECK_IDS.has(m.id)) {
           setActivePlate('neck');
         } else {
           setActivePlate('muscles');
+          if (m.id.startsWith('m-')) {
+            setZoomZone(m.zone);
+          }
         }
       }
       setVisibleLayers((prev) => ({ ...prev, muscles: true }));
@@ -525,6 +591,26 @@ export default function App() {
       setVisibleLayers((prev) => ({ ...prev, acupoints: true }));
     } else if (entity.type === 'neuro') {
       setSidebarCategory('neuro');
+    } else if (entity.type === 'fascia') {
+      if (switchPlate) setActivePlate('muscles');
+      setVisibleLayers((prev) => ({ ...prev, fascias: true }));
+      setSidebarCategory('fascia');
+    } else if (entity.type === 'tendon') {
+      if (switchPlate) setActivePlate('muscles');
+      setVisibleLayers((prev) => ({ ...prev, tendons: true }));
+      setSidebarCategory('tendon');
+    } else if (entity.type === 'joint') {
+      if (switchPlate) setActivePlate('muscles');
+      setVisibleLayers((prev) => ({ ...prev, joints: true }));
+      setSidebarCategory('joint');
+    } else if (entity.type === 'bone') {
+      if (switchPlate) setActivePlate('muscles');
+      setVisibleLayers((prev) => ({ ...prev, bones: true }));
+      setSidebarCategory('bone');
+    } else if (entity.type === 'vessel') {
+      if (switchPlate) setActivePlate('muscles');
+      setVisibleLayers((prev) => ({ ...prev, vessels: true }));
+      setSidebarCategory('vessel');
     }
   }, []);
 
@@ -561,7 +647,19 @@ export default function App() {
   );
 
   const handleToggleLayer = useCallback(
-    (layer: 'muscles' | 'organs' | 'diaphragms' | 'acupoints' | 'chains') => {
+    (
+      layer:
+        | 'muscles'
+        | 'organs'
+        | 'diaphragms'
+        | 'acupoints'
+        | 'chains'
+        | 'fascias'
+        | 'tendons'
+        | 'joints'
+        | 'bones'
+        | 'vessels'
+    ) => {
       setVisibleLayers((prev) => ({ ...prev, [layer]: !prev[layer] }));
     },
     []
@@ -690,6 +788,73 @@ export default function App() {
       );
     }
 
+    if (
+      sidebarCategory === 'fascia' ||
+      sidebarCategory === 'tendon' ||
+      sidebarCategory === 'joint' ||
+      sidebarCategory === 'bone' ||
+      sidebarCategory === 'vessel'
+    ) {
+      const sourceList =
+        sidebarCategory === 'fascia'
+          ? FASCIAS
+          : sidebarCategory === 'tendon'
+          ? TENDONS
+          : sidebarCategory === 'joint'
+          ? JOINTS
+          : sidebarCategory === 'bone'
+          ? BONES
+          : VESSELS;
+
+      const filtered = sourceList.filter((item) => {
+        if (zoneFilter !== 'all' && item.zone !== zoneFilter) return false;
+        if (sideFilter !== 'all' && item.side !== 'both' && item.side !== sideFilter) return false;
+        if (sidebarCategory === 'fascia' && fasciaLayerFilter !== 'all') {
+          if (
+            fasciaLayerFilter === 'superficial' &&
+            !item.categoryLabel.startsWith('Поверхностные')
+          ) {
+            return false;
+          }
+          if (fasciaLayerFilter === 'deep' && !item.categoryLabel.startsWith('Глубокие')) {
+            return false;
+          }
+          if (fasciaLayerFilter === 'visceral' && !item.categoryLabel.startsWith('Висцеральные')) {
+            return false;
+          }
+        }
+        if (sidebarCategory === 'joint' && jointSizeFilter !== 'all') {
+          if (
+            jointSizeFilter === 'major' &&
+            !item.categoryLabel.startsWith('Крупные и средние суставы')
+          ) {
+            return false;
+          }
+          if (
+            jointSizeFilter === 'small' &&
+            !item.categoryLabel.startsWith('Мелкие суставы')
+          ) {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      return rankAndMap(
+        filtered,
+        (el) => ({
+          title: el.name,
+          searchable: `${el.name} ${el.latinName} ${el.categoryLabel} ${el.anatomyAndLocation} ${el.palpationLandmark}`,
+        }),
+        (el) => ({
+          type: el.kind as EntityType,
+          id: el.id,
+          title: el.name,
+          subtitle: `${el.latinName.split('(')[0].trim()} · ${el.categoryLabel}`,
+        })
+      );
+    }
+
     return rankAndMap(
       MERIDIANS,
       (mer) => ({
@@ -703,7 +868,11 @@ export default function App() {
         subtitle: `${mer.element} · ${mer.activeHours}`,
       })
     );
-  }, [sidebarCategory, zoneFilter, sideFilter, sidebarSearch]);
+  }, [sidebarCategory, fasciaLayerFilter, jointSizeFilter, zoneFilter, sideFilter, sidebarSearch]);
+
+  useEffect(() => {
+    setVisibleSidebarLimit(80);
+  }, [sidebarCategory, fasciaLayerFilter, jointSizeFilter, zoneFilter, sideFilter, sidebarSearch]);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
@@ -901,7 +1070,7 @@ export default function App() {
                   onClick={() => setActiveTab('symptoms')}
                   className="hover:text-blue-700 cursor-pointer"
                 >
-                  2. Симптоматика
+                  2. Справочник клинических жалоб
                 </button>
                 <span className="text-slate-300">→</span>
                 <button
@@ -917,7 +1086,7 @@ export default function App() {
                   onClick={() => setActiveTab('intake')}
                   className="hover:text-blue-700 cursor-pointer"
                 >
-                  4. Опросник, Карта боли и ММТ
+                  4. Анамнез, фото-анализ и ММТ
                 </button>
               </div>
             )}
@@ -960,21 +1129,25 @@ export default function App() {
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
                   Анатомические таблицы открытых атласов (Грей, OpenStax, Wikimedia Commons) с
-                  выделением мышц, цепей, органов, диафрагм и акупунктурных точек на теле.
+                  выделением мышц, цепей, фасций, сухожилий, суставов, костей, сосудов, органов, диафрагм и точек.
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-2.5 text-xs text-slate-500 shrink-0 tabular-nums">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 shrink-0 tabular-nums">
                 <span>{MUSCLES.length} мышц</span>
                 <span aria-hidden="true">·</span>
-                <span>{MYOFASCIAL_CHAINS.length} цепей</span>
+                <span>{FASCIAS.length} фасций</span>
+                <span aria-hidden="true">·</span>
+                <span>{TENDONS.length} сухожилий</span>
+                <span aria-hidden="true">·</span>
+                <span>{JOINTS.length} суставов</span>
+                <span aria-hidden="true">·</span>
+                <span>{BONES.length} костей</span>
+                <span aria-hidden="true">·</span>
+                <span>{VESSELS.length} сосудов</span>
                 <span aria-hidden="true">·</span>
                 <span>{ORGANS.length} органов</span>
                 <span aria-hidden="true">·</span>
-                <span>{DIAPHRAGMS.length} диафрагм</span>
-                <span aria-hidden="true">·</span>
                 <span>{ACUPOINTS.length} точек</span>
-                <span aria-hidden="true">·</span>
-                <span>{NEURO_PROFILES.length} нейромодулей</span>
               </div>
             </div>
 
@@ -1093,23 +1266,35 @@ export default function App() {
                   </div>
 
                   {/* Category Segmented Tabs */}
-                  <div className="px-3 pt-3 pb-2 border-b border-slate-200 space-y-2.5">
-                    <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-lg">
+                  <div className="px-3 pt-2.5 pb-2 border-b border-slate-200 space-y-2">
+                    <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-lg">
                       {(
                         [
-                          { id: 'muscle', label: 'Мышцы' },
-                          { id: 'chain', label: 'Цепи (7)' },
-                          { id: 'organ', label: 'Органы' },
-                          { id: 'diaphragm', label: 'Диафрагмы' },
-                          { id: 'meridian', label: 'Меридианы' },
-                          { id: 'neuro', label: 'Нервная система' },
+                          { id: 'muscle', label: `Мышцы (${MUSCLES.length})` },
+                          { id: 'fascia', label: `Фасции (${FASCIAS.length})` },
+                          { id: 'tendon', label: `Сухож. (${TENDONS.length})` },
+                          { id: 'joint', label: `Суставы (${JOINTS.length})` },
+                          { id: 'bone', label: `Кости (${BONES.length})` },
+                          { id: 'vessel', label: `Сосуды (${VESSELS.length})` },
+                          { id: 'chain', label: `Цепи (${MYOFASCIAL_CHAINS.length})` },
+                          { id: 'organ', label: `Органы (${ORGANS.length})` },
+                          { id: 'diaphragm', label: `Диафр. (${DIAPHRAGMS.length})` },
+                          { id: 'meridian', label: `Мерид. (${MERIDIANS.length})` },
+                          { id: 'neuro', label: `НС (${NEURO_PROFILES.length})` },
                         ] as const
                       ).map((cat) => (
                         <button
                           key={cat.id}
                           type="button"
-                          onClick={() => setSidebarCategory(cat.id)}
-                          className={`px-2 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap truncate ${
+                          onClick={() => {
+                            setSidebarCategory(cat.id);
+                            if (cat.id === 'fascia') setVisibleLayers((p) => ({ ...p, fascias: true }));
+                            if (cat.id === 'tendon') setVisibleLayers((p) => ({ ...p, tendons: true }));
+                            if (cat.id === 'joint') setVisibleLayers((p) => ({ ...p, joints: true }));
+                            if (cat.id === 'bone') setVisibleLayers((p) => ({ ...p, bones: true }));
+                            if (cat.id === 'vessel') setVisibleLayers((p) => ({ ...p, vessels: true }));
+                          }}
+                          className={`px-1.5 py-1 text-[11px] font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap truncate ${
                             sidebarCategory === cat.id
                               ? 'bg-white text-slate-900 shadow-xs'
                               : 'text-slate-600 hover:text-slate-900'
@@ -1119,6 +1304,63 @@ export default function App() {
                         </button>
                       ))}
                     </div>
+
+                    {sidebarCategory === 'fascia' && (
+                      <div
+                        className="grid grid-cols-4 gap-1 p-0.5 bg-slate-100 rounded-md text-[10px]"
+                        aria-label="Слой фасций"
+                      >
+                        {(
+                          [
+                            { id: 'all', label: 'Все' },
+                            { id: 'superficial', label: 'Поверхн.' },
+                            { id: 'deep', label: 'Глубокие' },
+                            { id: 'visceral', label: 'Висцер.' },
+                          ] as const
+                        ).map((opt) => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => setFasciaLayerFilter(opt.id)}
+                            className={`py-1 px-1 rounded font-medium transition-colors cursor-pointer whitespace-nowrap truncate ${
+                              fasciaLayerFilter === opt.id
+                                ? 'bg-white text-teal-800 shadow-xs'
+                                : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {sidebarCategory === 'joint' && (
+                      <div
+                        className="grid grid-cols-3 gap-1 p-0.5 bg-slate-100 rounded-md text-[10px]"
+                        aria-label="Группа суставов"
+                      >
+                        {(
+                          [
+                            { id: 'all', label: 'Все (360)' },
+                            { id: 'major', label: 'Крупн./сред.' },
+                            { id: 'small', label: 'Мелкие' },
+                          ] as const
+                        ).map((opt) => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => setJointSizeFilter(opt.id)}
+                            className={`py-1 px-1 rounded font-medium transition-colors cursor-pointer whitespace-nowrap truncate ${
+                              jointSizeFilter === opt.id
+                                ? 'bg-white text-indigo-800 shadow-xs'
+                                : 'text-slate-600 hover:text-slate-900'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
 
                     <div className="relative">
                       <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -1139,33 +1381,53 @@ export default function App() {
                         В выбранной зоне нет записей по фильтру.
                       </div>
                     ) : (
-                      sidebarItems.map((item) => {
-                        const isActive =
-                          selectedEntity.type === item.type && selectedEntity.id === item.id;
-                        return (
-                          <button
-                            key={`${item.type}-${item.id}`}
-                            type="button"
-                            onClick={() =>
-                              handleSelectEntity({ type: item.type, id: item.id }, true)
-                            }
-                            className={`w-full px-3.5 py-2.5 text-left transition-colors cursor-pointer ${
-                              isActive ? 'bg-blue-50/80' : 'hover:bg-slate-50'
-                            }`}
-                          >
-                            <div
-                              className={`text-xs font-semibold leading-snug ${
-                                isActive ? 'text-blue-900' : 'text-slate-900'
+                      <>
+                        {sidebarItems.slice(0, visibleSidebarLimit).map((item) => {
+                          const isActive =
+                            selectedEntity.type === item.type && selectedEntity.id === item.id;
+                          return (
+                            <button
+                              key={`${item.type}-${item.id}`}
+                              type="button"
+                              onClick={() =>
+                                handleSelectEntity({ type: item.type, id: item.id }, true)
+                              }
+                              className={`w-full px-3.5 py-2.5 text-left transition-colors cursor-pointer ${
+                                isActive ? 'bg-blue-50/80' : 'hover:bg-slate-50'
                               }`}
                             >
-                              {item.title}
-                            </div>
-                            <div className="text-[11px] text-slate-500 mt-0.5 truncate">
-                              {item.subtitle}
-                            </div>
-                          </button>
-                        );
-                      })
+                              <div
+                                className={`text-xs font-semibold leading-snug ${
+                                  isActive ? 'text-blue-900' : 'text-slate-900'
+                                }`}
+                              >
+                                {item.title}
+                              </div>
+                              <div className="text-[11px] text-slate-500 mt-0.5 truncate">
+                                {item.subtitle}
+                              </div>
+                            </button>
+                          );
+                        })}
+                        {sidebarItems.length > visibleSidebarLimit && (
+                          <div className="p-3 bg-slate-50/80 flex flex-wrap items-center justify-between gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setVisibleSidebarLimit((v) => v + 100)}
+                              className="px-2.5 py-1 text-[11px] font-medium bg-white border border-slate-200 rounded-md text-slate-700 hover:bg-slate-100 cursor-pointer whitespace-nowrap"
+                            >
+                              Показать ещё {Math.min(100, sidebarItems.length - visibleSidebarLimit)}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setVisibleSidebarLimit(sidebarItems.length)}
+                              className="px-2.5 py-1 text-[11px] font-medium text-blue-700 hover:underline cursor-pointer whitespace-nowrap"
+                            >
+                              Все ({sidebarItems.length})
+                            </button>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </aside>
@@ -1271,11 +1533,15 @@ export default function App() {
             onSelectPatientId={setActivePatientId}
             loadedVisit={loadedVisit}
             sessionResetNonce={sessionResetNonce}
+            patientVisits={visits}
             onSaveVisitToPatient={handleSaveVisitToPatient}
             onSaveComplaintEvent={handleSaveComplaintEvent}
+            onDeleteComplaintEvent={handleDeleteComplaintEvent}
+            onSavePatientPostureAssessments={handleSavePatientPostureAssessments}
             onOpenPatientsTab={() => setActiveTab('patients')}
             onOpenTimelineTab={() => selectTab('timeline')}
             onOpenDirectoryTab={handleOpenDirectoryTab}
+            onOpenWorkspaceTab={(tab) => selectTab(tab)}
           />
         )}
 

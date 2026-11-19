@@ -1,16 +1,26 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ACUPOINTS,
+  BONES,
   DIAPHRAGMS,
+  FASCIAS,
+  JOINTS,
   MERIDIANS,
   MUSCLES,
   MYOFASCIAL_CHAINS,
   ORGANS,
+  TENDONS,
+  VESSELS,
   getCrossReferences,
 } from '../data';
 import { ACUPOINT_BODY_COORDS, ACUPUNCTURE_PLATE_META } from '../data/acupointBodyCoords';
 import { MUSCLE_PLATE_COORDS } from '../data/musclePlateCoords';
-import { AnatomicalSide, AnatomicalZoneId, SelectedEntity } from '../types/atlas';
+import {
+  AnatomicalSide,
+  AnatomicalZoneId,
+  SelectedEntity,
+  StructuralElementKind,
+} from '../types/atlas';
 import { Maximize, Minus, Move, Plus, RotateCcw } from 'lucide-react';
 
 export type AtlasPlateId =
@@ -35,9 +45,24 @@ interface OpenSourceAtlasViewerProps {
     diaphragms: boolean;
     acupoints: boolean;
     chains: boolean;
+    fascias: boolean;
+    tendons: boolean;
+    joints: boolean;
+    bones: boolean;
+    vessels: boolean;
   };
   onToggleLayer: (
-    layer: 'muscles' | 'organs' | 'diaphragms' | 'acupoints' | 'chains'
+    layer:
+      | 'muscles'
+      | 'organs'
+      | 'diaphragms'
+      | 'acupoints'
+      | 'chains'
+      | 'fascias'
+      | 'tendons'
+      | 'joints'
+      | 'bones'
+      | 'vessels'
   ) => void;
 }
 
@@ -114,6 +139,7 @@ const HEAD_PLATE_COORDS: Record<string, { type: 'muscle' | 'diaphragm'; x: numbe
   scm: { type: 'muscle', x: 392, y: 425 },
   'upper-trapezius': { type: 'muscle', x: 472, y: 465 },
   'cranial-tentorium': { type: 'diaphragm', x: 445, y: 160 },
+  'oral-diaphragm': { type: 'diaphragm', x: 248, y: 448 },
 };
 
 // Calibrated coordinates on neck_gray385.png (553 x 593)
@@ -125,6 +151,7 @@ const NECK_PLATE_COORDS: Record<string, { type: 'muscle' | 'diaphragm'; x: numbe
   'deep-neck-flexors': { type: 'muscle', x: 178, y: 285 },
   'cervical-extensors': { type: 'muscle', x: 370, y: 220 },
   'levator-scapulae': { type: 'muscle', x: 352, y: 320 },
+  'oral-diaphragm': { type: 'diaphragm', x: 148, y: 215 },
   'hyoid-thoracic-inlet': { type: 'diaphragm', x: 245, y: 486 },
 };
 
@@ -143,16 +170,56 @@ const ORGAN_PLATE_COORDS: Record<string, { x: number; y: number }> = {
   urogenital: { x: 655, y: 1085 },
 };
 
-// Calibrated coordinates on diaphragm.png (600 x 600)
+// Calibrated coordinates on diaphragm.png (600 x 600) — all 7 functional diaphragms
 const DIAPHRAGM_PLATE_COORDS: Record<string, { x: number; y: number }> = {
   'cranial-tentorium': { x: 300, y: 28 },
-  'hyoid-thoracic-inlet': { x: 300, y: 118 },
+  'oral-diaphragm': { x: 300, y: 74 },
+  'hyoid-thoracic-inlet': { x: 300, y: 124 },
   thoracoabdominal: { x: 300, y: 308 },
-  'pelvic-floor': { x: 300, y: 515 },
-  'plantar-popliteal': { x: 300, y: 575 },
+  'pelvic-floor': { x: 300, y: 486 },
+  'urogenital-diaphragm': { x: 300, y: 530 },
+  'plantar-popliteal': { x: 300, y: 576 },
 };
 
 // Acupoints calibrated in src/data/acupointBodyCoords.ts on acupuncture_body_chart.jpg (1400 x 1436)
+
+function isPrimaryOverviewBone(boneId: string): boolean {
+  if (boneId.includes('-phalanx-')) return false;
+  if (/^bone-ossicle-/.test(boneId)) return false;
+  if (/^bone-metacarpal-[2-4]-/.test(boneId)) return false;
+  if (/^bone-metatarsal-[2-4]-/.test(boneId)) return false;
+  if (/^bone-rib-(?:[2-9]|1[0-1])-/.test(boneId)) return false;
+  if (/^bone-vertebra-(?:c[2-6]|th(?:[1-9]|1[0-1])|l[1-4])$/.test(boneId)) return false;
+  if (/^bone-carpal-(?!scaphoid|pisiform)/.test(boneId)) return false;
+  if (/^bone-tarsal-(?!talus|calcaneus)/.test(boneId)) return false;
+  return true;
+}
+
+const PRIMARY_OVERVIEW_JOINT_IDS = new Set([
+  'joint-tmj',
+  'joint-ao-c0c1',
+  'joint-scj-acj',
+  'joint-ghj',
+  'joint-elbow-radioulnar',
+  'joint-costovertebral',
+  'joint-sij',
+  'joint-hip',
+  'joint-knee',
+  'joint-ankle-subtalar',
+  'joint-radiocarpal-r',
+  'joint-radiocarpal-l',
+  'joint-pubic-symphysis',
+  'joint-lumbosacral-l5-s1',
+  'joint-facet-c4-c5-r',
+  'joint-facet-l4-l5-r',
+  'joint-chopart-talonavicular-r',
+  'joint-mcp-1-r',
+  'joint-mtp-1-r',
+]);
+
+function isPrimaryOverviewJoint(jointId: string): boolean {
+  return PRIMARY_OVERVIEW_JOINT_IDS.has(jointId);
+}
 
 function pointsToSvgPath(points: Array<[number, number]>): string {
   if (points.length === 0) return '';
@@ -199,6 +266,11 @@ export const OpenSourceAtlasViewer: React.FC<OpenSourceAtlasViewerProps> = ({
     crossRefs.diaphragms.forEach((d) => set.add(`diaphragm:${d.id}`));
     crossRefs.acupoints.forEach((p) => set.add(`acupoint:${p.id}`));
     crossRefs.chains.forEach((c) => set.add(`chain:${c.id}`));
+    crossRefs.fascias.forEach((f) => set.add(`fascia:${f.id}`));
+    crossRefs.tendons.forEach((t) => set.add(`tendon:${t.id}`));
+    crossRefs.joints.forEach((j) => set.add(`joint:${j.id}`));
+    crossRefs.bones.forEach((b) => set.add(`bone:${b.id}`));
+    crossRefs.vessels.forEach((v) => set.add(`vessel:${v.id}`));
     return set;
   }, [crossRefs]);
 
@@ -309,16 +381,22 @@ export const OpenSourceAtlasViewer: React.FC<OpenSourceAtlasViewerProps> = ({
       x: number;
       y: number;
       label: string;
-      kind: 'muscle' | 'organ' | 'diaphragm' | 'acupoint';
+      kind: 'muscle' | 'organ' | 'diaphragm' | 'acupoint' | StructuralElementKind;
     }> = [];
 
     if (activePlate === 'muscles') {
       if (visibleLayers.muscles) {
         MUSCLES.forEach((m) => {
-          const coord = MUSCLE_PLATE_COORDS[m.id];
-          if (!coord) return;
-          const markerSide: AnatomicalSide = coord.x < 500 ? 'anterior' : 'posterior';
+          const baseCoord = MUSCLE_PLATE_COORDS[m.id];
           const isSelected = selectedEntity.type === 'muscle' && selectedEntity.id === m.id;
+          const isLinked = linkedIds.has(`muscle:${m.id}`);
+          if (zoomZone === 'all') {
+            if (!baseCoord && !isSelected && !isLinked) return;
+          } else if (m.zone !== zoomZone && !isSelected) {
+            return;
+          }
+          const coord = baseCoord ?? { x: m.svgRegion.cx, y: m.svgRegion.cy };
+          const markerSide: AnatomicalSide = coord.x < 500 ? 'anterior' : 'posterior';
           if (sideFilter !== 'all' && markerSide !== sideFilter && !isSelected) return;
           list.push({
             key: `m-${m.id}`,
@@ -337,7 +415,15 @@ export const OpenSourceAtlasViewer: React.FC<OpenSourceAtlasViewerProps> = ({
             entity: { type: 'diaphragm', id: 'cranial-tentorium' },
             x: 250,
             y: 44,
-            label: 'Намёт мозжечка (Краниальная диафрагма)',
+            label: '1. Намёт мозжечка (внутри черепа)',
+            kind: 'diaphragm',
+          },
+          {
+            key: 'd-oral',
+            entity: { type: 'diaphragm', id: 'oral-diaphragm' },
+            x: 250,
+            y: 120,
+            label: '2. Диафрагма рта (под нижней челюстью)',
             kind: 'diaphragm',
           },
           {
@@ -345,7 +431,7 @@ export const OpenSourceAtlasViewer: React.FC<OpenSourceAtlasViewerProps> = ({
             entity: { type: 'diaphragm', id: 'hyoid-thoracic-inlet' },
             x: 250,
             y: 168,
-            label: 'Верхняя апертура / Подъязычная диафрагма',
+            label: '3. Подключичная / верхняя грудная апертура',
             kind: 'diaphragm',
           },
           {
@@ -353,27 +439,78 @@ export const OpenSourceAtlasViewer: React.FC<OpenSourceAtlasViewerProps> = ({
             entity: { type: 'diaphragm', id: 'thoracoabdominal' },
             x: 250,
             y: 280,
-            label: 'Грудобрюшная диафрагма',
+            label: '4. Грудобрюшная диафрагма',
             kind: 'diaphragm',
           },
           {
             key: 'd-pelvic',
             entity: { type: 'diaphragm', id: 'pelvic-floor' },
             x: 250,
-            y: 446,
-            label: 'Тазовая диафрагма',
+            y: 432,
+            label: '5. Диафрагма малого таза',
+            kind: 'diaphragm',
+          },
+          {
+            key: 'd-urogenital',
+            entity: { type: 'diaphragm', id: 'urogenital-diaphragm' },
+            x: 250,
+            y: 468,
+            label: '6. Мочеполовая диафрагма',
             kind: 'diaphragm',
           },
           {
             key: 'd-plantar',
             entity: { type: 'diaphragm', id: 'plantar-popliteal' },
             x: 773,
-            y: 632,
-            label: 'Подколенная и подошвенная опора',
+            y: 806,
+            label: '7. Диафрагма стопы (подошвенная и подколенная опора)',
             kind: 'diaphragm',
           }
         );
       }
+
+      const pushStructuralMarkers = (
+        items: typeof FASCIAS,
+        layerEnabled: boolean,
+        prefix: string,
+        mode: 'default' | 'bone' | 'joint' = 'default'
+      ) => {
+        items.forEach((item) => {
+          const isSelected = selectedEntity.type === item.kind && selectedEntity.id === item.id;
+          const isLinked = linkedIds.has(`${item.kind}:${item.id}`);
+          if (!layerEnabled && !isSelected) return;
+          if (mode === 'bone' && !isSelected && !isLinked) {
+            if (zoomZone === 'all') {
+              if (!isPrimaryOverviewBone(item.id)) return;
+            } else if (item.zone !== zoomZone) {
+              return;
+            }
+          } else if (mode === 'joint' && !isSelected && !isLinked) {
+            if (zoomZone === 'all') {
+              if (!isPrimaryOverviewJoint(item.id)) return;
+            } else if (item.zone !== zoomZone) {
+              return;
+            }
+          } else if (zoomZone !== 'all' && !isSelected && !isLinked && item.zone !== zoomZone) {
+            return;
+          }
+          if (sideFilter !== 'all' && item.svgCoords.view !== sideFilter && !isSelected) return;
+          list.push({
+            key: `${prefix}-${item.id}`,
+            entity: { type: item.kind, id: item.id },
+            x: item.svgCoords.x,
+            y: item.svgCoords.y,
+            label: `${item.name} (${item.latinName})`,
+            kind: item.kind,
+          });
+        });
+      };
+
+      pushStructuralMarkers(FASCIAS, visibleLayers.fascias, 'fa');
+      pushStructuralMarkers(TENDONS, visibleLayers.tendons, 'te');
+      pushStructuralMarkers(JOINTS, visibleLayers.joints, 'jo', 'joint');
+      pushStructuralMarkers(BONES, visibleLayers.bones, 'bo', 'bone');
+      pushStructuralMarkers(VESSELS, visibleLayers.vessels, 've');
     } else if (activePlate === 'head') {
       Object.entries(HEAD_PLATE_COORDS).forEach(([id, cfg]) => {
         if (cfg.type === 'muscle') {
@@ -492,11 +629,11 @@ export const OpenSourceAtlasViewer: React.FC<OpenSourceAtlasViewerProps> = ({
     }
 
     return list;
-  }, [activePlate, visibleLayers, selectedEntity, linkedIds, sideFilter]);
+  }, [activePlate, visibleLayers, selectedEntity, linkedIds, sideFilter, zoomZone]);
 
   const getMarkerStyle = (
     entity: SelectedEntity,
-    kind: 'muscle' | 'organ' | 'diaphragm' | 'acupoint'
+    kind: 'muscle' | 'organ' | 'diaphragm' | 'acupoint' | StructuralElementKind
   ) => {
     const isSelected = selectedEntity.type === entity.type && selectedEntity.id === entity.id;
     const isLinked = linkedIds.has(`${entity.type}:${entity.id}`);
@@ -526,6 +663,36 @@ export const OpenSourceAtlasViewer: React.FC<OpenSourceAtlasViewerProps> = ({
           ring: 'ring-2 ring-rose-500/30',
         };
       }
+      if (kind === 'fascia') {
+        return {
+          bg: 'bg-teal-600 text-white border-white shadow-sm scale-110 z-20',
+          ring: 'ring-2 ring-teal-500/30',
+        };
+      }
+      if (kind === 'tendon') {
+        return {
+          bg: 'bg-orange-600 text-white border-white shadow-sm scale-110 z-20',
+          ring: 'ring-2 ring-orange-500/30',
+        };
+      }
+      if (kind === 'joint') {
+        return {
+          bg: 'bg-indigo-600 text-white border-white shadow-sm scale-110 z-20',
+          ring: 'ring-2 ring-indigo-500/30',
+        };
+      }
+      if (kind === 'bone') {
+        return {
+          bg: 'bg-stone-700 text-white border-white shadow-sm scale-110 z-20',
+          ring: 'ring-2 ring-stone-500/30',
+        };
+      }
+      if (kind === 'vessel') {
+        return {
+          bg: 'bg-red-600 text-white border-white shadow-sm scale-110 z-20',
+          ring: 'ring-2 ring-red-500/30',
+        };
+      }
       return {
         bg: 'bg-blue-600 text-white border-white shadow-sm scale-110 z-20',
         ring: 'ring-2 ring-blue-400/30',
@@ -541,6 +708,21 @@ export const OpenSourceAtlasViewer: React.FC<OpenSourceAtlasViewerProps> = ({
     }
     if (kind === 'acupoint') {
       return { bg: 'bg-white/95 text-rose-700 border-rose-500/70 hover:scale-110 z-10', ring: '' };
+    }
+    if (kind === 'fascia') {
+      return { bg: 'bg-teal-50/95 text-teal-800 border-teal-600/80 hover:scale-110 z-10', ring: '' };
+    }
+    if (kind === 'tendon') {
+      return { bg: 'bg-orange-50/95 text-orange-800 border-orange-600/80 hover:scale-110 z-10', ring: '' };
+    }
+    if (kind === 'joint') {
+      return { bg: 'bg-indigo-50/95 text-indigo-800 border-indigo-600/80 hover:scale-110 z-10', ring: '' };
+    }
+    if (kind === 'bone') {
+      return { bg: 'bg-stone-100/95 text-stone-800 border-stone-600/80 hover:scale-110 z-10', ring: '' };
+    }
+    if (kind === 'vessel') {
+      return { bg: 'bg-red-50/95 text-red-700 border-red-600/80 hover:scale-110 z-10', ring: '' };
     }
     return { bg: 'bg-white/95 text-slate-800 border-slate-500/70 hover:border-blue-600 hover:scale-110 z-10', ring: '' };
   };
@@ -665,7 +847,7 @@ export const OpenSourceAtlasViewer: React.FC<OpenSourceAtlasViewerProps> = ({
               <button
                 type="button"
                 onClick={() => onToggleLayer('muscles')}
-                className={`px-2 py-0.5 rounded border cursor-pointer whitespace-nowrap ${
+                className={`px-2 py-0.5 rounded border cursor-pointer whitespace-nowrap shrink-0 ${
                   visibleLayers.muscles
                     ? 'bg-blue-50 border-blue-200 text-blue-800 font-medium'
                     : 'border-slate-200 text-slate-400'
@@ -676,7 +858,7 @@ export const OpenSourceAtlasViewer: React.FC<OpenSourceAtlasViewerProps> = ({
               <button
                 type="button"
                 onClick={() => onToggleLayer('diaphragms')}
-                className={`px-2 py-0.5 rounded border cursor-pointer whitespace-nowrap ${
+                className={`px-2 py-0.5 rounded border cursor-pointer whitespace-nowrap shrink-0 ${
                   visibleLayers.diaphragms
                     ? 'bg-amber-50 border-amber-200 text-amber-800 font-medium'
                     : 'border-slate-200 text-slate-400'
@@ -687,13 +869,68 @@ export const OpenSourceAtlasViewer: React.FC<OpenSourceAtlasViewerProps> = ({
               <button
                 type="button"
                 onClick={() => onToggleLayer('chains')}
-                className={`px-2 py-0.5 rounded border cursor-pointer whitespace-nowrap ${
+                className={`px-2 py-0.5 rounded border cursor-pointer whitespace-nowrap shrink-0 ${
                   visibleLayers.chains
                     ? 'bg-violet-50 border-violet-200 text-violet-800 font-medium'
                     : 'border-slate-200 text-slate-400'
                 }`}
               >
-                Миофасц. цепи
+                Цепи
+              </button>
+              <button
+                type="button"
+                onClick={() => onToggleLayer('fascias')}
+                className={`px-2 py-0.5 rounded border cursor-pointer whitespace-nowrap shrink-0 ${
+                  visibleLayers.fascias
+                    ? 'bg-teal-50 border-teal-200 text-teal-800 font-medium'
+                    : 'border-slate-200 text-slate-400'
+                }`}
+              >
+                Фасции
+              </button>
+              <button
+                type="button"
+                onClick={() => onToggleLayer('tendons')}
+                className={`px-2 py-0.5 rounded border cursor-pointer whitespace-nowrap shrink-0 ${
+                  visibleLayers.tendons
+                    ? 'bg-orange-50 border-orange-200 text-orange-800 font-medium'
+                    : 'border-slate-200 text-slate-400'
+                }`}
+              >
+                Сухожилия
+              </button>
+              <button
+                type="button"
+                onClick={() => onToggleLayer('joints')}
+                className={`px-2 py-0.5 rounded border cursor-pointer whitespace-nowrap shrink-0 ${
+                  visibleLayers.joints
+                    ? 'bg-indigo-50 border-indigo-200 text-indigo-800 font-medium'
+                    : 'border-slate-200 text-slate-400'
+                }`}
+              >
+                Суставы
+              </button>
+              <button
+                type="button"
+                onClick={() => onToggleLayer('bones')}
+                className={`px-2 py-0.5 rounded border cursor-pointer whitespace-nowrap shrink-0 ${
+                  visibleLayers.bones
+                    ? 'bg-stone-100 border-stone-300 text-stone-800 font-medium'
+                    : 'border-slate-200 text-slate-400'
+                }`}
+              >
+                Кости
+              </button>
+              <button
+                type="button"
+                onClick={() => onToggleLayer('vessels')}
+                className={`px-2 py-0.5 rounded border cursor-pointer whitespace-nowrap shrink-0 ${
+                  visibleLayers.vessels
+                    ? 'bg-red-50 border-red-200 text-red-800 font-medium'
+                    : 'border-slate-200 text-slate-400'
+                }`}
+              >
+                Сосуды
               </button>
             </>
           )}
@@ -831,6 +1068,13 @@ export const OpenSourceAtlasViewer: React.FC<OpenSourceAtlasViewerProps> = ({
                 const isSelected =
                   selectedEntity.type === m.entity.type && selectedEntity.id === m.entity.id;
 
+                const dotSizeClass =
+                  isSelected
+                    ? 'w-4 h-4'
+                    : m.kind === 'acupoint' || markers.length > 90
+                    ? 'w-3 h-3'
+                    : 'w-4 h-4';
+
                 return (
                   <button
                     key={m.key}
@@ -844,9 +1088,7 @@ export const OpenSourceAtlasViewer: React.FC<OpenSourceAtlasViewerProps> = ({
                     onMouseLeave={() => setHoveredLabel(null)}
                     style={{ left: `${leftPct}%`, top: `${topPct}%` }}
                     aria-label={m.label}
-                    className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-transform duration-150 cursor-pointer flex items-center justify-center ${
-                      m.kind === 'acupoint' ? 'w-3.5 h-3.5' : 'w-4 h-4'
-                    } ${style.bg} ${style.ring}`}
+                    className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-transform duration-150 cursor-pointer flex items-center justify-center ${dotSizeClass} ${style.bg} ${style.ring}`}
                   >
                     {isSelected && (
                       <span className="w-1.5 h-1.5 rounded-full bg-white block" />

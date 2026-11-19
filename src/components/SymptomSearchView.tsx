@@ -218,7 +218,7 @@ export const SymptomSearchView: React.FC<SymptomSearchViewProps> = ({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">
-              Клинические жалобы, поиск по симптоматике и времени суток
+              Справочник клинических жалоб, поиск по симптоматике и времени суток
             </h1>
             <p className="text-sm text-slate-600 mt-1 max-w-3xl">
               Введите жалобу, симптом или время появления дискомфорта (например: «с 6 до 8 утра»,

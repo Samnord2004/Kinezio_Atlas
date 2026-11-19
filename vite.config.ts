@@ -13,7 +13,7 @@ export default defineConfig(() => {
   return {
     base: isElectronBuild ? './' : '/',
     define: {
-      __APP_VERSION__: JSON.stringify(pkg.version || '1.2.0'),
+      __APP_VERSION__: JSON.stringify(pkg.version || '1.4.0'),
     },
     plugins: [
       react(),

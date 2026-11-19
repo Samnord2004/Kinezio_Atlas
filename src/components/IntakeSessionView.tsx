@@ -24,6 +24,7 @@ import {
   PatientComplaintEvent,
   PatientProfile,
   PatientVisitRecord,
+  PostureAssessmentRecord,
   QuestionSeverity,
   SelectedEntity,
 } from '../types/atlas';
@@ -34,7 +35,18 @@ import {
   MMTContextualCorrectionPanel,
 } from './MMTContextualCorrectionPanel';
 import { PainMapView } from './PainMapView';
-import { PAIN_MARKER_META } from '../utils/painMapRecommendations';
+import { ComplaintTimelineView } from './ComplaintTimelineView';
+import { PosturePhotoAnalyzer } from './PosturePhotoAnalyzer';
+import {
+  AtlasOrSectionTarget,
+  SessionFullCorrectionAnalysis,
+} from './SessionFullCorrectionAnalysis';
+import { buildFullSessionAnalysis } from '../utils/sessionFullAnalysis';
+import {
+  BODY_POSTURE_META,
+  PAIN_MARKER_META,
+  buildPainMapRecommendations,
+} from '../utils/painMapRecommendations';
 import { describeBodySide } from '../data/musclePlateCoords';
 import { createEntityId } from '../utils/patientDatabase';
 import { STAGE_META } from '../data/complaintTimeline';
@@ -43,6 +55,11 @@ import {
   VoiceTargetMode,
   parseVoiceComplaint,
 } from '../utils/voiceComplaintParser';
+import {
+  SpeechModelQuality,
+  TranscribeProgress,
+  transcribeAudioBlobToRussian,
+} from '../utils/localSpeechTranscriber';
 import {
   ClinicalExportInput,
   buildClinicalTextReport,
@@ -55,6 +72,7 @@ import {
   AlertTriangle,
   ArrowRight,
   ArrowUpRight,
+  Camera,
   Check,
   CheckCircle2,
   ClipboardCheck,
@@ -63,6 +81,7 @@ import {
   FileDown,
   FileText,
   Lightbulb,
+  Lock,
   Mic,
   MicOff,
   Plus,
@@ -71,6 +90,7 @@ import {
   Save,
   Settings,
   Square,
+  Stethoscope,
   Users,
 } from 'lucide-react';
 
@@ -129,18 +149,26 @@ interface IntakeSessionViewProps {
   onSelectPatientId?: (patientId: string | null) => void;
   loadedVisit?: PatientVisitRecord | null;
   sessionResetNonce?: number;
+  patientVisits?: PatientVisitRecord[];
   onSaveVisitToPatient?: (
     visitData: Omit<PatientVisitRecord, 'id' | 'createdAt' | 'updatedAt'>,
     existingVisitId?: string,
     fallbackPatientName?: string
   ) => Promise<PatientVisitRecord | null>;
   onSaveComplaintEvent?: (patientId: string, event: PatientComplaintEvent) => Promise<void>;
+  onDeleteComplaintEvent?: (patientId: string, eventId: string) => Promise<void>;
+  onSavePatientPostureAssessments?: (
+    patientId: string,
+    assessments: PostureAssessmentRecord[]
+  ) => Promise<void>;
   onOpenPatientsTab?: () => void;
   onOpenTimelineTab?: () => void;
   onOpenDirectoryTab?: (tab: ContextDirectoryTab, itemId?: string) => void;
+  onOpenWorkspaceTab?: (tab: 'tests' | 'patterns' | 'protocols') => void;
 }
 
-type SessionStep = 'questionnaire' | 'painmap' | 'mmt' | 'summary';
+type SessionStep = 'anamnesis' | 'posture' | 'mmt' | 'summary';
+type AnamnesisSubStep = 'questionnaire' | 'timeline' | 'painmap';
 
 const DEFAULT_BASELINE_MUSCLES = [
   'iliopsoas',
@@ -163,6 +191,7 @@ interface PersistedSession {
   muscleQueue: string[];
   mmtRecords: Record<string, MMTSessionRecord>;
   painMap?: PainMapPoint[];
+  postureAssessments?: PostureAssessmentRecord[];
 }
 
 function getTodayIso(): string {
@@ -188,13 +217,19 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
   onSelectPatientId,
   loadedVisit = null,
   sessionResetNonce = 0,
+  patientVisits = [],
   onSaveVisitToPatient,
   onSaveComplaintEvent,
+  onDeleteComplaintEvent,
+  onSavePatientPostureAssessments,
   onOpenPatientsTab,
   onOpenTimelineTab,
   onOpenDirectoryTab,
+  onOpenWorkspaceTab,
 }) => {
-  const [step, setStep] = useState<SessionStep>('questionnaire');
+  const [step, setStep] = useState<SessionStep>('anamnesis');
+  const [anamnesisSubStep, setAnamnesisSubStep] = useState<AnamnesisSubStep>('questionnaire');
+  const [unlockedAnamnesisLevel, setUnlockedAnamnesisLevel] = useState<1 | 2 | 3>(1);
   const [domainFilter, setDomainFilter] = useState<IntakeDomain | 'all'>('all');
   const [patientName, setPatientName] = useState('');
   const [visitDate, setVisitDate] = useState<string>(getTodayIso);
@@ -205,6 +240,7 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
   const [muscleQueue, setMuscleQueue] = useState<string[]>(DEFAULT_BASELINE_MUSCLES);
   const [mmtRecords, setMmtRecords] = useState<Record<string, MMTSessionRecord>>({});
   const [painMap, setPainMap] = useState<PainMapPoint[]>([]);
+  const [postureAssessments, setPostureAssessments] = useState<PostureAssessmentRecord[]>([]);
   const [activeMuscleId, setActiveMuscleId] = useState<string>(DEFAULT_BASELINE_MUSCLES[0]);
   const [muscleToAdd, setMuscleToAdd] = useState<string>('');
   const [copiedSummary, setCopiedSummary] = useState(false);
@@ -214,10 +250,13 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
   const [currentVisitId, setCurrentVisitId] = useState<string | undefined>(undefined);
   const [saveVisitFeedback, setSaveVisitFeedback] = useState<string | null>(null);
 
-  // Web Speech API + Local Microphone Recording state
+  // Web Speech API + Local Microphone Recording + Offline Whisper Transcription state
   const [voiceTarget, setVoiceTarget] = useState<VoiceTargetMode>('auto');
+  const [speechModelQuality, setSpeechModelQuality] = useState<SpeechModelQuality>('fast');
   const [isRecording, setIsRecording] = useState(false);
   const [isAudioRecording, setIsAudioRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [transcribeProgress, setTranscribeProgress] = useState<TranscribeProgress | null>(null);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [audioNoteUrl, setAudioNoteUrl] = useState<string | null>(null);
   const [micPermissionDenied, setMicPermissionDenied] = useState(false);
@@ -233,11 +272,16 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const lastRecordedBlobRef = useRef<Blob | null>(null);
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioNoteUrlRef = useRef<string | null>(null);
   const dictationInputRef = useRef<HTMLInputElement | null>(null);
   const dictationTextRef = useRef<string>('');
   const lastAppliedSignatureRef = useRef<string>('');
+  const speechModelQualityRef = useRef<SpeechModelQuality>('fast');
+  speechModelQualityRef.current = speechModelQuality;
+  const voiceTargetRef = useRef<VoiceTargetMode>('auto');
+  voiceTargetRef.current = voiceTarget;
   const voiceSupported = useMemo(
     () =>
       Boolean(getSpeechRecognitionCtor()) ||
@@ -250,12 +294,21 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
     [patients, activePatientId]
   );
 
-  // Sync patientName (and saved painMap when starting with an existing patient)
+  // Sync patientName (and saved painMap/postureAssessments when starting with an existing patient)
   useEffect(() => {
     if (activePatientObj) {
       setPatientName(activePatientObj.fullName);
       if (!loadedVisit && activePatientObj.painMap && activePatientObj.painMap.length > 0) {
         setPainMap((prev) => (prev.length === 0 ? activePatientObj.painMap ?? [] : prev));
+      }
+      if (
+        !loadedVisit &&
+        activePatientObj.postureAssessments &&
+        activePatientObj.postureAssessments.length > 0
+      ) {
+        setPostureAssessments((prev) =>
+          prev.length === 0 ? activePatientObj.postureAssessments ?? [] : prev
+        );
       }
     }
   }, [activePatientObj, loadedVisit]);
@@ -275,6 +328,10 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
     setActiveMuscleId(nextQueue[0]);
     setMmtRecords(loadedVisit.mmtRecords);
     setPainMap(loadedVisit.painMap ?? []);
+    if (loadedVisit.postureAssessments && loadedVisit.postureAssessments.length > 0) {
+      setPostureAssessments(loadedVisit.postureAssessments);
+    }
+    setUnlockedAnamnesisLevel(3);
     setStep('summary');
   }, [loadedVisit]);
 
@@ -289,8 +346,11 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
     setMuscleQueue(DEFAULT_BASELINE_MUSCLES);
     setMmtRecords({});
     setPainMap(activePatientObj?.painMap ?? []);
+    setPostureAssessments(activePatientObj?.postureAssessments ?? []);
     setActiveMuscleId(DEFAULT_BASELINE_MUSCLES[0]);
-    setStep('questionnaire');
+    setUnlockedAnamnesisLevel(1);
+    setAnamnesisSubStep('questionnaire');
+    setStep('anamnesis');
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch {
@@ -315,7 +375,13 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
           setActiveMuscleId(parsed.muscleQueue[0]);
         }
         if (parsed.mmtRecords) setMmtRecords(parsed.mmtRecords);
-        if (Array.isArray(parsed.painMap)) setPainMap(parsed.painMap);
+        if (Array.isArray(parsed.painMap)) {
+          setPainMap(parsed.painMap);
+          if (parsed.painMap.length > 0) setUnlockedAnamnesisLevel(3);
+        }
+        if (Array.isArray(parsed.postureAssessments)) {
+          setPostureAssessments(parsed.postureAssessments);
+        }
       }
     } catch {
       // Ignore malformed local storage
@@ -335,6 +401,7 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
         muscleQueue,
         mmtRecords,
         painMap,
+        postureAssessments,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     } catch {
@@ -350,6 +417,7 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
     muscleQueue,
     mmtRecords,
     painMap,
+    postureAssessments,
   ]);
 
   // Domain scoring & detected causes from questionnaire
@@ -607,6 +675,42 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
     };
   }, []);
 
+  const runWhisperTranscription = useCallback(
+    async (blob: Blob, autoApply: boolean) => {
+      setIsTranscribing(true);
+      setVoiceErrorMsg(null);
+      setElectronDictationHint(false);
+      setTranscribeProgress({
+        phase: 'decoding',
+        percent: 2,
+        message: 'Подготовка аудиодорожки для распознавания речи...',
+      });
+      try {
+        const recognized = await transcribeAudioBlobToRussian(blob, {
+          quality: speechModelQualityRef.current,
+          onProgress: (p) => setTranscribeProgress(p),
+        });
+        const merged = [dictationTextRef.current.trim(), recognized.trim()]
+          .filter(Boolean)
+          .join(' ');
+        dictationTextRef.current = merged;
+        setDictationText(merged);
+        setShowVoiceEditor(true);
+        if (autoApply && merged) {
+          await applyParsedVoiceResult(merged, voiceTargetRef.current);
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setVoiceErrorMsg(msg);
+        setShowVoiceEditor(true);
+      } finally {
+        setIsTranscribing(false);
+        setTranscribeProgress(null);
+      }
+    },
+    [applyParsedVoiceResult]
+  );
+
   const stopLocalAudioCapture = useCallback(() => {
     if (recordingTimerRef.current) {
       clearInterval(recordingTimerRef.current);
@@ -626,75 +730,80 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
     setIsAudioRecording(false);
   }, []);
 
-  const startLocalAudioCapture = useCallback(async (fromElectronMode: boolean) => {
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-      setShowVoiceEditor(true);
-      setVoiceErrorMsg(
-        'Доступ к микрофону недоступен в этом контексте. Откройте приложение через http://localhost:3000 или HTTPS, либо введите жалобы в поле ниже.'
-      );
-      return;
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaStreamRef.current = stream;
-      audioChunksRef.current = [];
-
-      const mimeType =
-        typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported?.('audio/webm')
-          ? 'audio/webm'
-          : '';
-      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
-
-      recorder.ondataavailable = (ev) => {
-        if (ev.data && ev.data.size > 0) {
-          audioChunksRef.current.push(ev.data);
-        }
-      };
-
-      recorder.onstop = () => {
-        stream.getTracks().forEach((t) => t.stop());
-        mediaStreamRef.current = null;
-        if (audioChunksRef.current.length > 0) {
-          const blob = new Blob(audioChunksRef.current, {
-            type: recorder.mimeType || 'audio/webm',
-          });
-          if (audioNoteUrlRef.current) {
-            URL.revokeObjectURL(audioNoteUrlRef.current);
-          }
-          const url = URL.createObjectURL(blob);
-          audioNoteUrlRef.current = url;
-          setAudioNoteUrl(url);
-        }
-      };
-
-      mediaRecorderRef.current = recorder;
-      recorder.start(250);
-      setRecordingSeconds(0);
-      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
-      recordingTimerRef.current = setInterval(() => {
-        setRecordingSeconds((s) => s + 1);
-      }, 1000);
-
-      setIsAudioRecording(true);
-      setShowVoiceEditor(true);
-      setVoiceErrorMsg(null);
-      setElectronDictationHint(fromElectronMode);
-
-      setTimeout(() => {
-        dictationInputRef.current?.focus();
-      }, 80);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg.toLowerCase().includes('denied') || msg.toLowerCase().includes('permission')) {
-        setMicPermissionDenied(true);
+  const startLocalAudioCapture = useCallback(
+    async (fromElectronMode: boolean) => {
+      if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+        setShowVoiceEditor(true);
         setVoiceErrorMsg(
-          'Доступ к микрофону запрещён. Разрешите доступ к микрофону в настройках системы или браузера.'
+          'Доступ к микрофону недоступен в этом контексте. Откройте приложение через http://localhost:3000 или HTTPS, либо введите жалобы в поле ниже.'
         );
-      } else {
-        setVoiceErrorMsg(`Не удалось включить микрофон (${msg || 'устройство не найдено'}).`);
+        return;
       }
-    }
-  }, []);
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaStreamRef.current = stream;
+        audioChunksRef.current = [];
+
+        const mimeType =
+          typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported?.('audio/webm')
+            ? 'audio/webm'
+            : '';
+        const recorder = mimeType
+          ? new MediaRecorder(stream, { mimeType })
+          : new MediaRecorder(stream);
+
+        recorder.ondataavailable = (ev) => {
+          if (ev.data && ev.data.size > 0) {
+            audioChunksRef.current.push(ev.data);
+          }
+        };
+
+        recorder.onstop = () => {
+          stream.getTracks().forEach((t) => t.stop());
+          mediaStreamRef.current = null;
+          if (audioChunksRef.current.length > 0) {
+            const blob = new Blob(audioChunksRef.current, {
+              type: recorder.mimeType || 'audio/webm',
+            });
+            lastRecordedBlobRef.current = blob;
+            if (audioNoteUrlRef.current) {
+              URL.revokeObjectURL(audioNoteUrlRef.current);
+            }
+            const url = URL.createObjectURL(blob);
+            audioNoteUrlRef.current = url;
+            setAudioNoteUrl(url);
+            // Automatically transcribe spoken complaints and fill Pain Map / Timeline / MMT queue
+            void runWhisperTranscription(blob, true);
+          }
+        };
+
+        mediaRecorderRef.current = recorder;
+        recorder.start(250);
+        setRecordingSeconds(0);
+        if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = setInterval(() => {
+          setRecordingSeconds((s) => s + 1);
+        }, 1000);
+
+        setIsAudioRecording(true);
+        setShowVoiceEditor(true);
+        setVoiceErrorMsg(null);
+        setVoiceStatusMsg(null);
+        setElectronDictationHint(fromElectronMode);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.toLowerCase().includes('denied') || msg.toLowerCase().includes('permission')) {
+          setMicPermissionDenied(true);
+          setVoiceErrorMsg(
+            'Доступ к микрофону запрещён. Разрешите доступ к микрофону в настройках системы или браузера.'
+          );
+        } else {
+          setVoiceErrorMsg(`Не удалось включить микрофон (${msg || 'устройство не найдено'}).`);
+        }
+      }
+    },
+    [runWhisperTranscription]
+  );
 
   const toggleVoiceDictation = useCallback(async () => {
     setVoiceErrorMsg(null);
@@ -843,6 +952,7 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
     setMuscleQueue(DEFAULT_BASELINE_MUSCLES);
     setMmtRecords({});
     setPainMap([]);
+    setPostureAssessments([]);
     setActiveMuscleId(DEFAULT_BASELINE_MUSCLES[0]);
     setDictationText('');
     dictationTextRef.current = '';
@@ -851,7 +961,9 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
     setVoiceStatusMsg(null);
     setVoiceErrorMsg(null);
     lastAppliedSignatureRef.current = '';
-    setStep('questionnaire');
+    setUnlockedAnamnesisLevel(1);
+    setAnamnesisSubStep('questionnaire');
+    setStep('anamnesis');
     localStorage.removeItem(STORAGE_KEY);
   };
 
@@ -862,6 +974,48 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
     if (switchToMmtMuscleId) {
       setActiveMuscleId(switchToMmtMuscleId);
       setStep('mmt');
+    }
+  };
+
+  const handleGoToMmtFromAnyStage = () => {
+    const painRecs = buildPainMapRecommendations(painMap);
+    const postureMuscles = postureAssessments.flatMap((pa) => pa.priorityMuscleIds);
+    const mergedPriority = Array.from(
+      new Set([
+        ...analysis.suggestedMuscleIds,
+        ...painRecs.recommendedQueueMuscleIds,
+        ...postureMuscles,
+      ])
+    );
+    if (mergedPriority.length > 0) {
+      setMuscleQueue((prev) => {
+        const next = Array.from(new Set([...mergedPriority, ...prev]));
+        setActiveMuscleId(next[0]);
+        return next;
+      });
+    }
+    setStep('mmt');
+  };
+
+  const handleSavePostureAssessment = async (record: PostureAssessmentRecord) => {
+    const nextList = [
+      record,
+      ...postureAssessments.filter((p) => p.id !== record.id),
+    ];
+    setPostureAssessments(nextList);
+    if (record.priorityMuscleIds.length > 0) {
+      setMuscleQueue((prev) => Array.from(new Set([...record.priorityMuscleIds, ...prev])));
+    }
+    if (activePatientObj && onSavePatientPostureAssessments) {
+      await onSavePatientPostureAssessments(activePatientObj.id, nextList);
+    }
+  };
+
+  const handleDeletePostureAssessment = async (assessmentId: string) => {
+    const nextList = postureAssessments.filter((p) => p.id !== assessmentId);
+    setPostureAssessments(nextList);
+    if (activePatientObj && onSavePatientPostureAssessments) {
+      await onSavePatientPostureAssessments(activePatientObj.id, nextList);
     }
   };
 
@@ -878,6 +1032,7 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
         muscleQueue,
         mmtRecords,
         painMap,
+        postureAssessments,
       },
       currentVisitId,
       patientName.trim() || undefined
@@ -887,7 +1042,7 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
       if (!activePatientObj && saved.patientId && onSelectPatientId) {
         onSelectPatientId(saved.patientId);
       }
-      setSaveVisitFeedback('Приём и карта боли сохранены в карту пациента');
+      setSaveVisitFeedback('Приём, карта боли и фото-анализ сохранены в карту пациента');
       setTimeout(() => setSaveVisitFeedback(null), 3000);
     }
   };
@@ -934,6 +1089,7 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
       muscleQueue,
       mmtRecords,
       painMap,
+      postureAssessments,
       stats: {
         tested: mmtStats.tested,
         abnormal: mmtStats.abnormal,
@@ -950,6 +1106,7 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
       muscleQueue,
       mmtRecords,
       painMap,
+      postureAssessments,
       mmtStats,
     ]
   );
@@ -958,6 +1115,39 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
     () => buildStructuredCorrectionPlan(exportPayload),
     [exportPayload]
   );
+
+  const fullPostMmtAnalysis = useMemo(
+    () =>
+      buildFullSessionAnalysis({
+        chiefComplaint,
+        complaintTimeWindow,
+        domainScores: analysis.domainScores,
+        positiveItems: analysis.positiveItems,
+        painMap,
+        postureAssessments,
+        muscleQueue,
+        mmtRecords,
+      }),
+    [
+      chiefComplaint,
+      complaintTimeWindow,
+      analysis,
+      painMap,
+      postureAssessments,
+      muscleQueue,
+      mmtRecords,
+    ]
+  );
+
+  const handleNavigateFullAnalysisTarget = (target: AtlasOrSectionTarget) => {
+    if (target.kind === 'entity') {
+      onOpenInAtlas(target.entity);
+    } else if (target.kind === 'directory' && onOpenDirectoryTab) {
+      onOpenDirectoryTab(target.tab, target.itemId);
+    } else if (target.kind === 'workspace' && onOpenWorkspaceTab) {
+      onOpenWorkspaceTab(target.tab);
+    }
+  };
 
   const textReportPreview = useMemo(() => buildClinicalTextReport(exportPayload), [exportPayload]);
 
@@ -1015,12 +1205,12 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">
-              Опросный лист выявления причин и сеанс ММТ
+              Анамнез пациента, анализ тела по фото и сеанс ММТ
             </h1>
             <p className="text-sm text-slate-600 mt-1 max-w-3xl">
-              Системный опрос пациента по Триаде здоровья (структура, висцера, эмоции, энергетика,
-              химия), автоматический план ММТ и интерактивные подсказки тестирующему в процессе
-              проведения тестов и коррекции.
+              Последовательный сбор анамнеза (опросный лист → временная шкала жалоб → карта боли в
+              позах стоя/сидя/лёжа), оптический анализ углов тела с лазерным уровнем, тестирование
+              ММТ и системная коррекция по всем разделам.
             </p>
           </div>
 
@@ -1151,28 +1341,40 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
                 )}
               </button>
             </div>
-            <div className="lg:col-span-6 flex flex-wrap items-center justify-end gap-1 p-1 bg-slate-100 rounded-lg">
-              {(
-                [
-                  { id: 'questionnaire', label: '1. Опросный лист' },
-                  { id: 'painmap', label: `2. Карта боли (${painMap.length})` },
-                  { id: 'mmt', label: `3. ММТ (${muscleQueue.length})` },
-                  { id: 'summary', label: '4. Сводка' },
-                ] as const
-              ).map((s) => (
+            <div className="lg:col-span-6 flex flex-wrap items-center justify-end gap-1.5">
+              <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 rounded-lg">
+                {(
+                  [
+                    { id: 'anamnesis', label: '1. Анамнез' },
+                    { id: 'posture', label: `2. Фото-анализ (${postureAssessments.length})` },
+                    { id: 'mmt', label: `3. ММТ (${muscleQueue.length})` },
+                    { id: 'summary', label: '4. Анализ и коррекция' },
+                  ] as const
+                ).map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setStep(s.id)}
+                    className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                      step === s.id
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+              {step !== 'mmt' && (
                 <button
-                  key={s.id}
                   type="button"
-                  onClick={() => setStep(s.id)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                    step === s.id
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
+                  onClick={handleGoToMmtFromAnyStage}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                 >
-                  {s.label}
+                  <Stethoscope className="w-3.5 h-3.5" />
+                  <span>К ММТ →</span>
                 </button>
-              ))}
+              )}
             </div>
           </div>
 
@@ -1194,6 +1396,14 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
                     Микрофон активен — запись{' '}
                     {String(Math.floor(recordingSeconds / 60)).padStart(2, '0')}:
                     {String(recordingSeconds % 60).padStart(2, '0')}
+                  </span>
+                )}
+                {isTranscribing && (
+                  <span className="inline-flex items-center gap-1.5 text-blue-700 font-semibold font-mono text-[11px] tabular-nums">
+                    Распознавание речи (Whisper)
+                    {typeof transcribeProgress?.percent === 'number'
+                      ? ` ${transcribeProgress.percent}%`
+                      : '...'}
                   </span>
                 )}
               </div>
@@ -1223,6 +1433,35 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
                   ))}
                 </div>
 
+                {(Boolean(window.kinezioDesktop?.isElectron) || !getSpeechRecognitionCtor()) && (
+                  <div className="flex items-center gap-1 p-0.5 bg-slate-200/70 rounded-md">
+                    <button
+                      type="button"
+                      onClick={() => setSpeechModelQuality('fast')}
+                      title="Быстрая модель Whisper Tiny (~45 МБ при первой загрузке)"
+                      className={`px-2 py-1 text-[11px] font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                        speechModelQuality === 'fast'
+                          ? 'bg-white text-slate-900 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Whisper Быстрая
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSpeechModelQuality('accurate')}
+                      title="Точная модель Whisper Base (~75 МБ при первой загрузке)"
+                      className={`px-2 py-1 text-[11px] font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                        speechModelQuality === 'accurate'
+                          ? 'bg-white text-slate-900 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Whisper Точная
+                    </button>
+                  </div>
+                )}
+
                 <button
                   type="button"
                   onClick={() => setShowVoiceEditor((v) => !v)}
@@ -1233,14 +1472,37 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
               </div>
             </div>
 
-            {(showVoiceEditor || isRecording || isAudioRecording || dictationText.length > 0 || Boolean(interimTranscript) || Boolean(audioNoteUrl)) && (
+            {(showVoiceEditor ||
+              isRecording ||
+              isAudioRecording ||
+              isTranscribing ||
+              dictationText.length > 0 ||
+              Boolean(interimTranscript) ||
+              Boolean(audioNoteUrl)) && (
               <div className="space-y-2">
-                {electronDictationHint && (
+                {electronDictationHint && isAudioRecording && (
                   <div className="px-3 py-2 bg-blue-50/80 border border-blue-200 rounded-md text-[11px] text-blue-950 leading-relaxed">
-                    <strong>Микрофон macOS подключён (идёт аудиозапись приёма).</strong> Для
-                    автоматического перевода речи в текст в офлайн-приложении macOS поставьте курсор
-                    в поле ниже и нажмите дважды клавишу <strong>Fn</strong> (или меню{' '}
-                    <strong>Правка → Начать диктовку</strong>) — затем нажмите «Заполнить поля».
+                    <strong>Идёт запись с микрофона macOS.</strong> Продиктуйте жалобы пациента,
+                    локализацию боли и время суток — сразу после нажатия «Стоп» встроенный
+                    офлайн-модуль <strong>Whisper</strong> автоматически переведёт речь в текст и
+                    заполнит Шкалу жалоб, Карту боли и план ММТ.
+                  </div>
+                )}
+
+                {isTranscribing && transcribeProgress && (
+                  <div className="px-3 py-2 bg-blue-50/70 border border-blue-200 rounded-md space-y-1.5">
+                    <div className="flex items-center justify-between gap-2 text-[11px] text-blue-950 font-medium">
+                      <span>{transcribeProgress.message}</span>
+                      {typeof transcribeProgress.percent === 'number' && (
+                        <span className="font-mono tabular-nums">{transcribeProgress.percent}%</span>
+                      )}
+                    </div>
+                    <div className="h-1.5 bg-blue-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-700 transition-all duration-200"
+                        style={{ width: `${transcribeProgress.percent ?? 15}%` }}
+                      />
+                    </div>
                   </div>
                 )}
 
@@ -1260,7 +1522,7 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
                     <button
                       type="button"
                       onClick={() => void applyParsedVoiceResult(dictationText, voiceTarget)}
-                      disabled={!dictationText.trim()}
+                      disabled={!dictationText.trim() || isTranscribing}
                       className="px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 disabled:opacity-40 rounded-md transition-colors whitespace-nowrap cursor-pointer"
                     >
                       Заполнить поля
@@ -1293,11 +1555,28 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
                 {audioNoteUrl && (
                   <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-white border border-slate-200 rounded-md">
                     <audio controls src={audioNoteUrl} className="h-8 flex-1 min-w-[200px]" />
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      {lastRecordedBlobRef.current && (
+                        <button
+                          type="button"
+                          disabled={isTranscribing}
+                          onClick={() => {
+                            if (lastRecordedBlobRef.current) {
+                              void runWhisperTranscription(lastRecordedBlobRef.current, true);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-white bg-blue-700 hover:bg-blue-800 disabled:opacity-50 rounded cursor-pointer whitespace-nowrap"
+                        >
+                          <Mic className="w-3 h-3" />
+                          <span>
+                            {isTranscribing ? 'Распознавание...' : 'Распознать речь и симптомы'}
+                          </span>
+                        </button>
+                      )}
                       <a
                         href={audioNoteUrl}
                         download={`priem-${visitDate || 'audio'}.webm`}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded whitespace-nowrap"
                       >
                         <FileDown className="w-3 h-3" />
                         <span>Скачать аудио</span>
@@ -1307,6 +1586,7 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
                         onClick={() => {
                           if (audioNoteUrlRef.current) URL.revokeObjectURL(audioNoteUrlRef.current);
                           audioNoteUrlRef.current = null;
+                          lastRecordedBlobRef.current = null;
                           setAudioNoteUrl(null);
                         }}
                         className="px-2 py-1 text-[11px] text-slate-500 hover:text-rose-700 cursor-pointer"
@@ -1342,7 +1622,11 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
                   {lastVoiceParse && lastVoiceParse.painPoints.length > 0 && (
                     <button
                       type="button"
-                      onClick={() => setStep('painmap')}
+                      onClick={() => {
+                        setUnlockedAnamnesisLevel(3);
+                        setAnamnesisSubStep('painmap');
+                        setStep('anamnesis');
+                      }}
                       className="text-blue-700 hover:underline font-semibold cursor-pointer"
                     >
                       Открыть Карту боли ({painMap.length}) →
@@ -1387,6 +1671,15 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
                     <span>
                       <strong className="text-slate-800">Симптом:</strong>{' '}
                       {lastVoiceParse.matchedSymptom.title}
+                    </span>
+                  </>
+                )}
+                {lastVoiceParse.matchedStructuralTitles && lastVoiceParse.matchedStructuralTitles.length > 0 && (
+                  <>
+                    <span aria-hidden="true">·</span>
+                    <span>
+                      <strong className="text-slate-800">Структуры:</strong>{' '}
+                      {lastVoiceParse.matchedStructuralTitles.join(', ')}
                     </span>
                   </>
                 )}
@@ -1488,8 +1781,114 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
         </div>
       </div>
 
-      {/* ==================== STEP 1: QUESTIONNAIRE ==================== */}
-      {step === 'questionnaire' && (
+      {/* ==================== STEP 1: АНАМНЕЗ (ПОСЛЕДОВАТЕЛЬНЫЕ РАЗДЕЛЫ) ==================== */}
+      {step === 'anamnesis' && (
+        <div className="space-y-5">
+          {/* Sequential Sub-stage Bar inside Anamnesis */}
+          <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-slate-900 mr-1">
+                Этапы опросного листа пациента:
+              </span>
+              {(
+                [
+                  {
+                    id: 'questionnaire' as AnamnesisSubStep,
+                    level: 1 as const,
+                    label: '1.1 Опросный лист',
+                  },
+                  {
+                    id: 'timeline' as AnamnesisSubStep,
+                    level: 2 as const,
+                    label: '1.2 Временная шкала клинических жалоб',
+                  },
+                  {
+                    id: 'painmap' as AnamnesisSubStep,
+                    level: 3 as const,
+                    label: `1.3 Карта боли (${painMap.length})`,
+                  },
+                ] as const
+              ).map((sub) => {
+                const isUnlocked = unlockedAnamnesisLevel >= sub.level;
+                const isActive = anamnesisSubStep === sub.id;
+                return (
+                  <button
+                    key={sub.id}
+                    type="button"
+                    disabled={!isUnlocked}
+                    onClick={() => {
+                      if (isUnlocked) setAnamnesisSubStep(sub.id);
+                    }}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors whitespace-nowrap shrink-0 ${
+                      isActive
+                        ? 'bg-slate-900 text-white border-slate-900'
+                        : isUnlocked
+                          ? 'bg-slate-50 text-slate-800 border-slate-200 hover:bg-slate-100 cursor-pointer'
+                          : 'bg-slate-50/50 text-slate-400 border-slate-200/70 cursor-not-allowed'
+                    }`}
+                    title={
+                      isUnlocked
+                        ? `Открыть раздел: ${sub.label}`
+                        : 'Раздел откроется последовательно после предыдущего шага'
+                    }
+                  >
+                    {!isUnlocked && <Lock className="w-3 h-3" />}
+                    <span>{sub.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {anamnesisSubStep === 'questionnaire' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUnlockedAnamnesisLevel((l) => (l < 2 ? 2 : l));
+                    setAnamnesisSubStep('timeline');
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg cursor-pointer whitespace-nowrap"
+                >
+                  <span>Открыть Временную шкалу жалоб</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {anamnesisSubStep === 'timeline' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUnlockedAnamnesisLevel(3);
+                    setAnamnesisSubStep('painmap');
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg cursor-pointer whitespace-nowrap"
+                >
+                  <span>Открыть Карту боли</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {anamnesisSubStep === 'painmap' && (
+                <button
+                  type="button"
+                  onClick={() => setStep('posture')}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg cursor-pointer whitespace-nowrap"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>Далее: Анализ тела по фото</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleGoToMmtFromAnyStage}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg cursor-pointer whitespace-nowrap"
+              >
+                <Stethoscope className="w-3.5 h-3.5" />
+                <span>Перейти к ММТ →</span>
+              </button>
+            </div>
+          </div>
+
+          {anamnesisSubStep === 'questionnaire' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left: Domain Filter + Questions */}
           <div className="lg:col-span-8 space-y-4">
@@ -1652,7 +2051,7 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
                 )}
               </div>
 
-              <div className="pt-3 border-t border-slate-200 space-y-2.5">
+              <div className="pt-3 border-t border-slate-200 space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-semibold text-slate-800">План ММТ ({muscleQueue.length})</span>
                   {analysis.suggestedMuscleIds.length > 0 && (
@@ -1663,33 +2062,102 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
                 </div>
                 <button
                   type="button"
+                  onClick={() => {
+                    setUnlockedAnamnesisLevel((l) => (l < 2 ? 2 : l));
+                    setAnamnesisSubStep('timeline');
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors cursor-pointer"
+                >
+                  <span>Далее: Временная шкала жалоб</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
                   onClick={() =>
                     analysis.suggestedMuscleIds.length > 0
                       ? syncRecommendedToQueue()
-                      : setStep('mmt')
+                      : handleGoToMmtFromAnyStage()
                   }
-                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors cursor-pointer"
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors cursor-pointer"
                 >
-                  <span>Перейти к проведению ММТ</span>
+                  <span>Перейти к ММТ сразу</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
           </div>
         </div>
+          )}
+
+          {anamnesisSubStep === 'timeline' && (
+            <div className="space-y-4">
+              <ComplaintTimelineView
+                onOpenInAtlas={onOpenInAtlas}
+                activePatient={activePatientObj}
+                patientVisits={patientVisits.filter((v) => v.patientId === activePatientObj?.id)}
+                onSaveComplaintEvent={onSaveComplaintEvent}
+                onDeleteComplaintEvent={onDeleteComplaintEvent}
+                onStartMmtWithSymptom={() => handleGoToMmtFromAnyStage()}
+                onOpenPatientsTab={onOpenPatientsTab}
+                initialCircadianPeriod={complaintTimeWindow || undefined}
+              />
+              <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="text-xs text-slate-600">
+                  После оценки каскада жалоб и суточного ритма откройте следующий раздел —{' '}
+                  <strong className="text-slate-900">Карту боли</strong> (с проверкой стоя / сидя / лёжа).
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUnlockedAnamnesisLevel(3);
+                      setAnamnesisSubStep('painmap');
+                    }}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg cursor-pointer"
+                  >
+                    <span>Открыть Карту боли</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleGoToMmtFromAnyStage}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg cursor-pointer"
+                  >
+                    <span>Перейти к ММТ →</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {anamnesisSubStep === 'painmap' && (
+            <PainMapView
+              points={painMap}
+              onChangePoints={setPainMap}
+              muscleQueue={muscleQueue}
+              onAddMusclesToQueue={handleAddPainMusclesToQueue}
+              onOpenInAtlas={onOpenInAtlas}
+              onSaveToPatient={onSaveVisitToPatient ? handleSaveToPatientCard : undefined}
+              hasLinkedPatient={Boolean(activePatientObj)}
+              saveFeedback={saveVisitFeedback}
+              onProceedToPosture={() => setStep('posture')}
+              onGoToMmt={handleGoToMmtFromAnyStage}
+            />
+          )}
+        </div>
       )}
 
-      {/* ==================== STEP 2: INTERACTIVE PAIN MAP ==================== */}
-      {step === 'painmap' && (
-        <PainMapView
-          points={painMap}
-          onChangePoints={setPainMap}
-          muscleQueue={muscleQueue}
-          onAddMusclesToQueue={handleAddPainMusclesToQueue}
+      {/* ==================== STEP 2: POSTURE & LIMB PHOTO ANGLE ANALYSIS ==================== */}
+      {step === 'posture' && (
+        <PosturePhotoAnalyzer
+          assessments={postureAssessments}
+          onSaveAssessment={(rec) => void handleSavePostureAssessment(rec)}
+          onDeleteAssessment={(id) => void handleDeletePostureAssessment(id)}
+          onAddMusclesToMmt={handleAddPainMusclesToQueue}
+          onGoToMmt={handleGoToMmtFromAnyStage}
           onOpenInAtlas={onOpenInAtlas}
-          onSaveToPatient={onSaveVisitToPatient ? handleSaveToPatientCard : undefined}
-          hasLinkedPatient={Boolean(activePatientObj)}
-          saveFeedback={saveVisitFeedback}
+          patientId={activePatientObj?.id}
+          visitId={currentVisitId}
         />
       )}
 
@@ -2126,18 +2594,38 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
                 </div>
               )}
 
-              {/* Practitioner Session Notes */}
-              <div className="space-y-1.5 pt-2 border-t border-slate-200">
-                <label className="text-xs font-medium text-slate-700 block">
-                  Заметки по тесту и реакции на коррекцию
-                </label>
-                <input
-                  type="text"
-                  value={activeRecord.notes}
-                  onChange={(e) => updateRecord(activeMuscle.id, { notes: e.target.value })}
-                  placeholder="Например: гипотония справа восстановилась после лифтинга печени и стимуляции НЛ 5 м/р..."
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600 focus:bg-white"
-                />
+              {/* Practitioner Session Notes + Proceed to Full Post-MMT Analysis */}
+              <div className="space-y-3 pt-2 border-t border-slate-200">
+                <div>
+                  <label className="text-xs font-medium text-slate-700 block mb-1">
+                    Заметки по тесту и реакции на коррекцию
+                  </label>
+                  <input
+                    type="text"
+                    value={activeRecord.notes}
+                    onChange={(e) => updateRecord(activeMuscle.id, { notes: e.target.value })}
+                    placeholder="Например: гипотония справа восстановилась после лифтинга печени и стимуляции НЛ 5 м/р..."
+                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-600 focus:bg-white"
+                  />
+                </div>
+
+                <div className="p-3.5 bg-slate-900 text-white rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="text-xs">
+                    <div className="font-bold">Завершить ММТ и сформировать разбор</div>
+                    <div className="text-slate-300 mt-0.5">
+                      Система соберёт причины и конкретные способы коррекции по всем 10 разделам
+                      (МФЦ, висцера, меридианы, НС, КСТ, трасты, тейпы, нозоды, мудры, паттерны).
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setStep('summary')}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-950 bg-cyan-400 hover:bg-cyan-300 rounded-lg whitespace-nowrap shrink-0 cursor-pointer"
+                  >
+                    <span>Анализ причин и коррекция</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -2585,7 +3073,11 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
                   </div>
                   <button
                     type="button"
-                    onClick={() => setStep('painmap')}
+                    onClick={() => {
+                      setUnlockedAnamnesisLevel(3);
+                      setAnamnesisSubStep('painmap');
+                      setStep('anamnesis');
+                    }}
                     className="print:hidden text-blue-700 hover:underline font-medium cursor-pointer"
                   >
                     Открыть карту боли →
@@ -2604,7 +3096,11 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
                           {m?.name ?? 'Мышца не указана'}
                         </div>
                         <div className="text-[11px] text-slate-500 font-mono tabular-nums mt-0.5">
-                          {describeBodySide(pt.x)} · x={pt.x}, y={pt.y}
+                          {describeBodySide(pt.x)}
+                          {pt.posture ? ` · ${BODY_POSTURE_META[pt.posture].shortLabel}` : ''}
+                          {pt.triggerBehavior === 'constant_all_postures'
+                            ? ' · Неизменный в позах (НС!)'
+                            : ''}
                           {pt.intensity !== undefined ? ` · ВАШ ${pt.intensity}/10` : ''}
                         </div>
                         {pt.note && <div className="text-[11px] text-slate-600 mt-0.5">{pt.note}</div>}
@@ -2632,6 +3128,14 @@ export const IntakeSessionView: React.FC<IntakeSessionViewProps> = ({
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Comprehensive Post-MMT Analysis Across ALL Sections */}
+          <div className="pt-5 border-t border-slate-200">
+            <SessionFullCorrectionAnalysis
+              analysis={fullPostMmtAnalysis}
+              onNavigateTarget={handleNavigateFullAnalysisTarget}
+            />
           </div>
         </div>
       )}

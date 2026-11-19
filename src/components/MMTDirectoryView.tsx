@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ANATOMICAL_DIVISIONS,
   ANATOMICAL_SIDE_META,
@@ -18,8 +18,9 @@ import {
   SelectedEntity,
 } from '../types/atlas';
 import { fuzzyMatches } from '../utils/fuzzySearch';
-import { ArrowUpRight, Layers, Maximize2, Search, X } from 'lucide-react';
+import { ArrowUpRight, Layers, Search } from 'lucide-react';
 import { MMTSchematicDiagram } from './MMTSchematicDiagram';
+import { DirectoryPhotoGallery } from './DirectoryPhotoGallery';
 import { MMTHoldTimer } from './MMTHoldTimer';
 import {
   ContextDirectoryTab,
@@ -46,8 +47,12 @@ export const MMTDirectoryView: React.FC<MMTDirectoryViewProps> = ({
   const [showClassifier, setShowClassifier] = useState(false);
   const [query, setQuery] = useState('');
   const [activeMuscleId, setActiveMuscleId] = useState<string>(MUSCLES[0].id);
-  const [isMuscleZoomOpen, setIsMuscleZoomOpen] = useState(false);
+  const [visibleLimit, setVisibleLimit] = useState(80);
   const [simRecordMap, setSimRecordMap] = useState<Record<string, MMTSessionRecord>>({});
+
+  useEffect(() => {
+    setVisibleLimit(80);
+  }, [zoneFilter, sideFilter, query]);
 
   const filteredMuscles = useMemo(() => {
     return MUSCLES.filter((m) => {
@@ -293,7 +298,7 @@ export const MMTDirectoryView: React.FC<MMTDirectoryViewProps> = ({
             </div>
           ) : (
             <div className="divide-y divide-slate-100 max-h-[680px] overflow-y-auto">
-              {filteredMuscles.map((m) => {
+              {filteredMuscles.slice(0, visibleLimit).map((m) => {
                 const isSelected = activeMuscle.id === m.id;
                 const linkedOrgans = m.organIds
                   .map((id) => ORGANS.find((o) => o.id === id)?.name.split('(')[0].trim())
@@ -329,6 +334,24 @@ export const MMTDirectoryView: React.FC<MMTDirectoryViewProps> = ({
                   </button>
                 );
               })}
+              {filteredMuscles.length > visibleLimit && (
+                <div className="p-3 bg-slate-50/80 flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setVisibleLimit((v) => v + 100)}
+                    className="px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 rounded-md text-slate-700 hover:bg-slate-100 cursor-pointer"
+                  >
+                    Показать ещё {Math.min(100, filteredMuscles.length - visibleLimit)}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVisibleLimit(filteredMuscles.length)}
+                    className="px-3 py-1.5 text-xs font-medium text-blue-700 hover:underline cursor-pointer"
+                  >
+                    Показать все ({filteredMuscles.length})
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -374,31 +397,19 @@ export const MMTDirectoryView: React.FC<MMTDirectoryViewProps> = ({
           <DirectoryCustomNoteBanner override={activeMuscleOverride} />
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 text-xs items-stretch">
-            <div className="md:col-span-5 bg-slate-50 border border-slate-200 rounded-xl overflow-hidden flex flex-col">
-              <div
-                className="relative flex-1 min-h-[170px] bg-white flex items-center justify-center p-2 cursor-zoom-in"
-                onClick={() => setIsMuscleZoomOpen(true)}
-              >
-                <img
-                  src={activeMuscleAnatomy.src}
-                  alt={activeMuscleAnatomy.caption}
-                  className="max-h-44 w-full object-contain rounded"
-                />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsMuscleZoomOpen(true);
-                  }}
-                  className="absolute top-2 right-2 p-1.5 bg-white/90 hover:bg-white text-slate-700 border border-slate-200 rounded-md cursor-pointer"
-                  title="Увеличить анатомию мышцы"
-                >
-                  <Maximize2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-              <div className="px-3 py-1.5 bg-white border-t border-slate-200 text-[10px] text-slate-500">
-                {activeMuscleAnatomy.caption} · {activeMuscleAnatomy.attribution}
-              </div>
+            <div className="md:col-span-5">
+              <DirectoryPhotoGallery
+                section="muscle"
+                itemId={activeMuscle.id}
+                itemName={activeMuscle.name}
+                defaultImageSrc={activeMuscleAnatomy.src}
+                defaultImageCaption={activeMuscleAnatomy.caption}
+                defaultImageAttribution={activeMuscleAnatomy.attribution}
+                defaultSlideLabel="Анатомия"
+                photoTitlePlaceholder="Например: Вектор тяги / триггерная зона"
+                photoCaptionPlaceholder="Анатомический ориентир, положение конечности при ММТ..."
+                vectorPresets={['Вектор давления ММТ', 'Направление волокон', 'Триггерная точка']}
+              />
             </div>
 
             <div className="md:col-span-7 flex flex-col justify-between gap-3">
@@ -582,40 +593,6 @@ export const MMTDirectoryView: React.FC<MMTDirectoryViewProps> = ({
         </div>
       </div>
 
-      {isMuscleZoomOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4"
-          onClick={() => setIsMuscleZoomOpen(false)}
-        >
-          <div
-            className="bg-white border border-slate-200 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between gap-4">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">{activeMuscle.name}</h3>
-                <p className="text-xs text-slate-500">
-                  {activeMuscleAnatomy.caption} · {activeMuscleAnatomy.attribution}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsMuscleZoomOpen(false)}
-                className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="p-5 bg-slate-50 flex justify-center">
-              <img
-                src={activeMuscleAnatomy.src}
-                alt={activeMuscle.name}
-                className="max-h-[65vh] w-auto object-contain rounded-lg"
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

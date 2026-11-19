@@ -1,4 +1,5 @@
 const { app, BrowserWindow, dialog, ipcMain, Menu, shell, net, session, systemPreferences } = require('electron');
+const crypto = require('crypto');
 const fs = require('fs');
 const fsp = require('fs/promises');
 const os = require('os');
@@ -327,9 +328,22 @@ ipcMain.handle('kinezio:open-mic-settings', async () => {
 });
 
 ipcMain.handle('kinezio:check-updates', async (_event, feedUrl) => {
+  const trimmed = String(feedUrl || '').trim();
+  // Allow reading a local version.json path or file:// URL directly in Electron
+  if (trimmed.startsWith('file://') || trimmed.startsWith('/') || /^[A-Za-z]:\\/.test(trimmed)) {
+    try {
+      const localPath = trimmed.startsWith('file://') ? new URL(trimmed).pathname : trimmed;
+      const raw = await fsp.readFile(localPath, 'utf8');
+      const manifest = JSON.parse(raw);
+      return { ok: true, manifest };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  }
+
   return new Promise((resolve) => {
     try {
-      const request = net.request(feedUrl);
+      const request = net.request(trimmed);
       let body = '';
       request.on('response', (response) => {
         if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -343,7 +357,7 @@ ipcMain.handle('kinezio:check-updates', async (_event, feedUrl) => {
           try {
             const manifest = JSON.parse(body);
             resolve({ ok: true, manifest });
-          } catch (e) {
+          } catch {
             resolve({ ok: false, error: 'Некорректный JSON манифеста обновлений' });
           }
         });
@@ -356,4 +370,79 @@ ipcMain.handle('kinezio:check-updates', async (_event, feedUrl) => {
       resolve({ ok: false, error: err instanceof Error ? err.message : String(err) });
     }
   });
+});
+
+ipcMain.handle('kinezio:open-update-package', async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  const res = await dialog.showOpenDialog(win, {
+    title: 'Выберите скачанный установщик КинезиоАтлас (.dmg / .zip / .pkg)',
+    defaultPath: app.getPath('downloads'),
+    filters: [{ name: 'Установщик обновления', extensions: ['dmg', 'zip', 'pkg'] }],
+    properties: ['openFile'],
+  });
+  if (res.canceled || !res.filePaths || res.filePaths.length === 0) {
+    return { canceled: true, ok: false };
+  }
+  const filePath = res.filePaths[0];
+  const openError = await shell.openPath(filePath);
+  if (openError) {
+    return { canceled: false, ok: false, filePath, error: openError };
+  }
+  return { canceled: false, ok: true, filePath };
+});
+
+function getSpeechCacheDir() {
+  return path.join(app.getPath('userData'), 'whisper-cache');
+}
+
+function hashCacheKey(key) {
+  return crypto.createHash('sha256').update(String(key)).digest('hex');
+}
+
+ipcMain.handle('kinezio:speech-cache-read', async (_event, cacheKey) => {
+  try {
+    const dir = getSpeechCacheDir();
+    const id = hashCacheKey(cacheKey);
+    const binPath = path.join(dir, `${id}.bin`);
+    const metaPath = path.join(dir, `${id}.meta.json`);
+    const [bytes, metaRaw] = await Promise.all([
+      fsp.readFile(binPath),
+      fsp.readFile(metaPath, 'utf8').catch(() => '{}'),
+    ]);
+    const meta = JSON.parse(metaRaw);
+    return {
+      ok: true,
+      bytes: new Uint8Array(bytes),
+      contentType: meta.contentType || 'application/octet-stream',
+    };
+  } catch {
+    return { ok: false };
+  }
+});
+
+ipcMain.handle('kinezio:speech-cache-write', async (_event, cacheKey, bytes, contentType) => {
+  try {
+    const dir = getSpeechCacheDir();
+    await fsp.mkdir(dir, { recursive: true });
+    const id = hashCacheKey(cacheKey);
+    const binPath = path.join(dir, `${id}.bin`);
+    const metaPath = path.join(dir, `${id}.meta.json`);
+    const buf = Buffer.from(bytes);
+    await Promise.all([
+      fsp.writeFile(binPath, buf),
+      fsp.writeFile(
+        metaPath,
+        JSON.stringify({
+          key: String(cacheKey),
+          contentType: contentType || 'application/octet-stream',
+          sizeBytes: buf.byteLength,
+          savedAt: new Date().toISOString(),
+        }),
+        'utf8'
+      ),
+    ]);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
 });

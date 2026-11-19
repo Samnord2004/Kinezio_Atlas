@@ -4,6 +4,7 @@ import {
   MERIDIANS,
   MUSCLES,
   MYOFASCIAL_CHAINS,
+  NEURO_PROFILES,
   ORGANS,
   SYMPTOMS,
   getCrossReferences,
@@ -12,16 +13,58 @@ import {
 import {
   AnatomicalSide,
   AnatomicalZoneId,
+  BodyPosturePosition,
   Diaphragm,
   Meridian,
   Muscle,
   MyofascialChain,
+  NeuroPhysiologyProfile,
   Organ,
   PainMapPoint,
   PainMarkerType,
   SymptomProfile,
   TriadCorrectionBundle,
+  TriggerPostureBehavior,
 } from '../types/atlas';
+
+export const BODY_POSTURE_META: Record<
+  BodyPosturePosition,
+  { label: string; shortLabel: string; clinicalRole: string }
+> = {
+  standing: {
+    label: 'Стоя',
+    shortLabel: 'Стоя',
+    clinicalRole: 'Осевая гравитационная нагрузка и восходящая цепь (стопа → таз → позвоночник)',
+  },
+  sitting: {
+    label: 'Сидя',
+    shortLabel: 'Сидя',
+    clinicalRole: 'Исключена компенсация стоп/коленей: доминирует таз, поясница, шея и ВНЧС',
+  },
+  lying: {
+    label: 'Лёжа',
+    shortLabel: 'Лёжа',
+    clinicalRole: 'Разгрузка осевой гравитации: проявляются висцеральные, краниальные и сосудисто-нервные триггеры',
+  },
+};
+
+export const TRIGGER_BEHAVIOR_META: Record<
+  TriggerPostureBehavior,
+  { label: string; shortLabel: string; description: string }
+> = {
+  varies_with_posture: {
+    label: 'Меняется в позах (стоя / сидя / лёжа)',
+    shortLabel: 'Зависит от позы',
+    description:
+      'Триггер исчезает или ослабевает при смене позы — ведущий компонент биомеханический (стопа, суставной блок, фасциальная цепь).',
+  },
+  constant_all_postures: {
+    label: 'НЕ меняется стоя, сидя и лёжа',
+    shortLabel: 'Неизменный (НС!)',
+    description:
+      'Постоянство триггера независимо от гравитации (стоя/сидя/лёжа) — клинический маркер нарушения вегетативной и соматической нервной системы!',
+  },
+};
 
 export const PAIN_MARKER_META: Record<
   PainMarkerType,
@@ -40,7 +83,7 @@ export const PAIN_MARKER_META: Record<
     shortLabel: 'Боль',
     clinicalRole: 'Локальная или отражённая болевая зона',
     actionHint:
-      'Выполните ТЛ на зону боли при тесте сильной индикаторной мышцы. Если боль отражённая — ищите первичную гипотонию в антагонистах и миофасциальной цепи.',
+      'Выполните ТЛ на зону боли при тесте сильной индикаторной мышцы. Проверьте изменение боли стоя, сидя и лёжа.',
     badgeClass: 'bg-rose-50 text-rose-800 border-rose-200',
     textClass: 'text-rose-700',
     hex: '#e11d48',
@@ -50,7 +93,7 @@ export const PAIN_MARKER_META: Record<
     shortLabel: 'Триггер',
     clinicalRole: 'Болезненное миофасциальное уплотнение (ТТ)',
     actionHint:
-      'Проведите ишемическую компрессию (30–60 с) или ПИР, затем обязательно протестируйте антагонист на скрытую гипотонию и проверьте НЛ-зоны Чапмена.',
+      'Оцените реакцию триггера при переходе стоя → сидя → лёжа. Если триггер НЕ меняется в 3 позах — приоритетно тестируйте вегетативную и соматическую НС!',
     badgeClass: 'bg-amber-50 text-amber-800 border-amber-200',
     textClass: 'text-amber-700',
     hex: '#d97706',
@@ -82,6 +125,11 @@ export interface PainMuscleRecommendation {
 export interface PainMapRecommendations {
   counts: Record<PainMarkerType, number>;
   sideCounts: Record<AnatomicalSide, number>;
+  postureCounts: Record<BodyPosturePosition | 'unspecified', number>;
+  constantPosturePoints: PainMapPoint[];
+  multiPosturePersistentMuscles: string[];
+  autonomicSomaticAlert: boolean;
+  recommendedNeuroProfiles: NeuroPhysiologyProfile[];
   zones: Array<{
     id: AnatomicalZoneId;
     name: string;
@@ -119,6 +167,17 @@ export function buildPainMapRecommendations(points: PainMapPoint[]): PainMapReco
     anterior: 0,
     posterior: 0,
   };
+
+  const postureCounts: Record<BodyPosturePosition | 'unspecified', number> = {
+    standing: 0,
+    sitting: 0,
+    lying: 0,
+    unspecified: 0,
+  };
+
+  const posturesByMuscleOrZone = new Map<string, Set<BodyPosturePosition>>();
+  const constantPosturePoints: PainMapPoint[] = [];
+
   const zoneCounts = new Map<
     AnatomicalZoneId,
     { total: number; anterior: number; posterior: number }
@@ -131,6 +190,20 @@ export function buildPainMapRecommendations(points: PainMapPoint[]): PainMapReco
   points.forEach((pt) => {
     counts[pt.type]++;
     sideCounts[pt.view]++;
+    if (pt.posture) {
+      postureCounts[pt.posture]++;
+      const sigKey = pt.primaryMuscleId ?? pt.zoneId;
+      const set = posturesByMuscleOrZone.get(sigKey) ?? new Set<BodyPosturePosition>();
+      set.add(pt.posture);
+      posturesByMuscleOrZone.set(sigKey, set);
+    } else {
+      postureCounts.unspecified++;
+    }
+
+    if (pt.triggerBehavior === 'constant_all_postures') {
+      constantPosturePoints.push(pt);
+    }
+
     const zAcc = zoneCounts.get(pt.zoneId) ?? { total: 0, anterior: 0, posterior: 0 };
     zAcc.total += 1;
     if (pt.view === 'anterior') zAcc.anterior += 1;
@@ -142,7 +215,6 @@ export function buildPainMapRecommendations(points: PainMapPoint[]): PainMapReco
       : pt.matchedMuscleIds.slice(0, 2);
 
     muscleIds.forEach((mId, idx) => {
-      // Primary muscle gets full weight; secondary nearby muscles still tracked
       const existing = muscleAccumulator.get(mId) ?? {
         types: new Set<PainMarkerType>(),
         count: 0,
@@ -154,6 +226,29 @@ export function buildPainMapRecommendations(points: PainMapPoint[]): PainMapReco
       muscleAccumulator.set(mId, existing);
     });
   });
+
+  // Also detect if same muscle/zone appears across all 3 postures (standing, sitting, lying)
+  const multiPosturePersistentMuscles: string[] = [];
+  posturesByMuscleOrZone.forEach((pSet, sigKey) => {
+    if (pSet.size >= 3) {
+      multiPosturePersistentMuscles.push(sigKey);
+    }
+  });
+
+  const autonomicSomaticAlert =
+    constantPosturePoints.length > 0 || multiPosturePersistentMuscles.length > 0;
+
+  const recommendedNeuroProfiles = autonomicSomaticAlert
+    ? NEURO_PROFILES.filter((np) =>
+        [
+          'neuro-somatic',
+          'neuro-sympathetic',
+          'neuro-parasympathetic',
+          'neuro-posture-lying-sitting-standing',
+          'neuro-switching-disorganization',
+        ].includes(np.id)
+      )
+    : [];
 
   const zones = Array.from(zoneCounts.entries())
     .map(([id, zAcc]) => {
@@ -208,7 +303,6 @@ export function buildPainMapRecommendations(points: PainMapPoint[]): PainMapReco
     });
   });
 
-  // Sort: weak_muscle & trigger_point & higher intensity/count first
   muscleRecommendations.sort((a, b) => {
     const weight = (rec: PainMuscleRecommendation) =>
       rec.pointCount * 10 +
@@ -218,7 +312,6 @@ export function buildPainMapRecommendations(points: PainMapPoint[]): PainMapReco
     return weight(b) - weight(a);
   });
 
-  // Match symptoms from SYMPTOMS directory by active zones & muscles
   const activeZones = new Set(zoneCounts.keys());
   const activeMuscleSet = new Set(muscleAccumulator.keys());
 
@@ -244,7 +337,6 @@ export function buildPainMapRecommendations(points: PainMapPoint[]): PainMapReco
           .sort((a, b) => b.score - a.score)
           .slice(0, 5);
 
-  // Include muscles suggested by top matched symptoms as candidate MMT targets
   const queueIds = new Set<string>();
   muscleRecommendations.forEach((rec) => queueIds.add(rec.muscle.id));
   symptomMatches.slice(0, 3).forEach((sm) => {
@@ -254,6 +346,11 @@ export function buildPainMapRecommendations(points: PainMapPoint[]): PainMapReco
   return {
     counts,
     sideCounts,
+    postureCounts,
+    constantPosturePoints,
+    multiPosturePersistentMuscles,
+    autonomicSomaticAlert,
+    recommendedNeuroProfiles,
     zones,
     muscleRecommendations,
     symptomMatches,

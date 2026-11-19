@@ -18,11 +18,17 @@ import {
   Muscle,
   Organ,
   PainMapPoint,
+  PostureAssessmentRecord,
   QuestionSeverity,
   QuestionnaireItem,
   TriadCorrectionBundle,
 } from '../types/atlas';
-import { PAIN_MARKER_META } from './painMapRecommendations';
+import {
+  BODY_POSTURE_META,
+  PAIN_MARKER_META,
+  TRIGGER_BEHAVIOR_META,
+} from './painMapRecommendations';
+import { POSTURE_PHASE_META, POSTURE_VIEW_META } from './postureAnalysisEngine';
 import { describeBodySide } from '../data/musclePlateCoords';
 
 export interface DomainScoreSummary {
@@ -60,6 +66,7 @@ export interface ClinicalExportInput {
   muscleQueue: string[];
   mmtRecords: Record<string, MMTSessionRecord>;
   painMap?: PainMapPoint[];
+  postureAssessments?: PostureAssessmentRecord[];
   stats: {
     tested: number;
     abnormal: number;
@@ -307,10 +314,32 @@ export function buildClinicalTextReport(data: ClinicalExportInput): string {
             const zoneName = ANATOMICAL_ZONES.find((z) => z.id === pt.zoneId)?.shortName ?? pt.zoneId;
             const muscleName =
               MUSCLES.find((m) => m.id === pt.primaryMuscleId)?.name ?? 'Мышца не указана';
+            const postureStr = pt.posture ? ` | Поза: ${BODY_POSTURE_META[pt.posture].label}` : '';
+            const trigStr =
+              pt.triggerBehavior === 'constant_all_postures'
+                ? ` | ТРИГГЕР НЕ МЕНЯЕТСЯ В ПОЗАХ (намёк на ВНС/СНС)`
+                : '';
             const vas = pt.intensity !== undefined ? ` | ВАШ: ${pt.intensity}/10` : '';
             const note = pt.note?.trim() ? ` | Заметка: ${pt.note.trim()}` : '';
-            return `  ${idx + 1}. [${typeLabel}] ${muscleName} — ${zoneName}, ${describeBodySide(pt.x)} (x=${pt.x}, y=${pt.y})${vas}${note}`;
+            return `  ${idx + 1}. [${typeLabel}] ${muscleName} — ${zoneName}, ${describeBodySide(pt.x)}${postureStr}${trigStr}${vas}${note}`;
           }),
+        ]
+      : []),
+    ...(data.postureAssessments && data.postureAssessments.length > 0
+      ? [
+          '',
+          '3.6. ФОТО-АНАЛИЗ УГЛОВ ПОЛОЖЕНИЯ ТЕЛА И КОНЕЧНОСТЕЙ (ЛАЗЕРНЫЙ УРОВЕНЬ)',
+          subSep,
+          ...data.postureAssessments.flatMap((pa, idx) => [
+            `  ${idx + 1}. [${POSTURE_PHASE_META[pa.phase].label}] ${POSTURE_VIEW_META[pa.view].label}`,
+            `     Вектор внимания: ${pa.summaryVector}`,
+            ...pa.angles
+              .filter((a) => a.severity !== 'normal')
+              .map(
+                (a) =>
+                  `     - ${a.label}: ${a.angleDeg > 0 ? '+' : ''}${a.angleDeg.toFixed(1)}° (${a.deviationDirection})`
+              ),
+          ]),
         ]
       : []),
     '',
@@ -877,7 +906,7 @@ export async function exportClinicalPdf(data: ClinicalExportInput): Promise<void
     cur.y += 8;
   });
 
-  // ==================== SECTION 2.5: PAIN MAP ====================
+  // ==================== SECTION 2.5: PAIN MAP & POSTURE ====================
   if (data.painMap && data.painMap.length > 0) {
     drawSectionHeading('Карта боли, триггерных точек и слабых мышц');
     data.painMap.forEach((pt, idx) => {
@@ -885,10 +914,15 @@ export async function exportClinicalPdf(data: ClinicalExportInput): Promise<void
       const zoneName = ANATOMICAL_ZONES.find((z) => z.id === pt.zoneId)?.shortName ?? pt.zoneId;
       const muscleName =
         MUSCLES.find((m) => m.id === pt.primaryMuscleId)?.name ?? 'Мышца не выбрана';
+      const posLabel = pt.posture ? ` · Поза: ${BODY_POSTURE_META[pt.posture].shortLabel}` : '';
+      const constFlag =
+        pt.triggerBehavior === 'constant_all_postures'
+          ? ` · [${TRIGGER_BEHAVIOR_META.constant_all_postures.shortLabel}]`
+          : '';
       const vas = pt.intensity !== undefined ? ` · ВАШ ${pt.intensity}/10` : '';
       const note = pt.note?.trim() ? ` — ${pt.note.trim()}` : '';
       drawParagraph(
-        `${idx + 1}. [${typeLabel}] ${muscleName} (${zoneName}, ${describeBodySide(pt.x)}, x=${pt.x}, y=${pt.y}${vas})${note}`,
+        `${idx + 1}. [${typeLabel}] ${muscleName} (${zoneName}, ${describeBodySide(pt.x)}${posLabel}${constFlag}${vas})${note}`,
         {
           x: MARGIN_X + 14,
           width: CONTENT_W - 14,
@@ -898,6 +932,46 @@ export async function exportClinicalPdf(data: ClinicalExportInput): Promise<void
           gapAfter: 6,
         }
       );
+    });
+  }
+
+  if (data.postureAssessments && data.postureAssessments.length > 0) {
+    drawSectionHeading('Анализ углов положения тела и конечностей по фото');
+    data.postureAssessments.forEach((pa, idx) => {
+      drawParagraph(
+        `${idx + 1}. [${POSTURE_PHASE_META[pa.phase].label}] ${POSTURE_VIEW_META[pa.view].label}`,
+        {
+          x: MARGIN_X + 14,
+          width: CONTENT_W - 14,
+          font: `600 21px ${fontBody}`,
+          color: '#0f172a',
+          lineHeight: 28,
+          gapAfter: 4,
+        }
+      );
+      drawParagraph(`Вектор внимания: ${pa.summaryVector}`, {
+        x: MARGIN_X + 24,
+        width: CONTENT_W - 24,
+        font: `400 19px ${fontBody}`,
+        color: '#334155',
+        lineHeight: 26,
+        gapAfter: 6,
+      });
+      pa.angles
+        .filter((a) => a.severity !== 'normal')
+        .forEach((a) => {
+          drawParagraph(
+            `• ${a.label}: ${a.angleDeg > 0 ? '+' : ''}${a.angleDeg.toFixed(1)}° (${a.deviationDirection})`,
+            {
+              x: MARGIN_X + 28,
+              width: CONTENT_W - 28,
+              font: `500 19px ${fontMono}`,
+              color: a.severity === 'significant' ? '#9f1239' : '#92400e',
+              lineHeight: 26,
+              gapAfter: 4,
+            }
+          );
+        });
     });
   }
 

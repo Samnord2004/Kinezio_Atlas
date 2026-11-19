@@ -12,6 +12,7 @@ import {
   NEURO_PROFILES,
   NOSODES,
   ORGANS,
+  STRUCTURAL_ELEMENTS,
   SYMPTOMS,
   TAPING_APPLICATIONS,
   TRUST_MANIPULATIONS,
@@ -56,12 +57,12 @@ interface SearchRecord {
 }
 
 const QUICK_SEARCH_CHIPS = [
-  'ползание',
-  'переворот',
+  'грудопоясничная фасция',
+  'ахиллово сухожилие',
+  'ВНЧС',
+  'крестец',
+  'грудной проток',
   'височное простукивание',
-  'Шарпа',
-  'де Клейна',
-  'краниосакральная',
   'паттерн шага',
   'с 6 до 8',
   'шум в ушах',
@@ -104,6 +105,16 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
         return 'text-violet-700';
       case 'neuro':
         return 'text-cyan-700';
+      case 'fascia':
+        return 'text-teal-700';
+      case 'tendon':
+        return 'text-orange-700';
+      case 'joint':
+        return 'text-indigo-700';
+      case 'bone':
+        return 'text-stone-700';
+      case 'vessel':
+        return 'text-red-700';
     }
   };
 
@@ -211,6 +222,19 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
         keywords: `${ch.name} ${ch.englishName} ${ch.shortCode} ${ch.plane} ${ch.pathwaySegments.join(' ')}`,
       })
     );
+    STRUCTURAL_ELEMENTS.forEach((rawEl) => {
+      const el = applyOverride(rawEl.kind, rawEl);
+      records.push({
+        key: `${el.kind}-${el.id}`,
+        kind: 'entity',
+        entity: { type: el.kind, id: el.id },
+        badgeLabel: `${getEntityTypeLabel(el.kind)} · ${el.categoryLabel}`,
+        badgeColor: getTypeColor(el.kind),
+        title: el.name,
+        subtitle: `${el.latinName} · ${el.palpationLandmark}`,
+        keywords: `${el.name} ${el.latinName} ${el.categoryLabel} ${el.anatomyAndLocation} ${el.biomechanicsAndFunction} ${el.palpationLandmark} ${el.kinesiologyTestAndProvocation} ${el.dysfunctionSigns.join(' ')}`,
+      });
+    });
     MUDRAS.forEach((mu) =>
       records.push({
         key: `mudra-${mu.id}`,

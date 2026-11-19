@@ -8,6 +8,7 @@ import {
 } from './zones';
 import { MUSCLES as BASE_MUSCLES } from './muscles';
 import { EXPANDED_MUSCLES } from './musclesExpanded';
+import { COMPLETE_HUMAN_MUSCLES } from './musclesComplete';
 import { DIAPHRAGMS, ORGANS } from './organsAndDiaphragms';
 import { ACUPOINTS, MERIDIANS } from './meridiansAndPoints';
 import { CLINICAL_PROTOCOLS } from './protocols';
@@ -35,6 +36,16 @@ import { MOVEMENT_PATTERNS } from './movementPatterns';
 import { CRANIOSACRAL_PROFILES } from './craniosacral';
 import { getMuscleAnatomyImage } from './muscleAnatomyImages';
 import {
+  BONES,
+  FASCIAS,
+  JOINTS,
+  STRUCTURAL_ELEMENTS,
+  STRUCTURAL_KIND_LABELS,
+  TENDONS,
+  VESSELS,
+  findStructuralElement,
+} from './structuralSystems';
+import {
   Acupoint,
   Diaphragm,
   EntityType,
@@ -46,9 +57,11 @@ import {
   NosodeProfile,
   Organ,
   SelectedEntity,
+  StructuralElementKind,
+  StructuralElementProfile,
 } from '../types/atlas';
 
-const MUSCLES: Muscle[] = [...BASE_MUSCLES, ...EXPANDED_MUSCLES];
+const MUSCLES: Muscle[] = [...BASE_MUSCLES, ...EXPANDED_MUSCLES, ...COMPLETE_HUMAN_MUSCLES];
 
 export {
   ANATOMICAL_DIVISIONS,
@@ -83,6 +96,14 @@ export {
   MOVEMENT_PATTERNS,
   CRANIOSACRAL_PROFILES,
   getMuscleAnatomyImage,
+  FASCIAS,
+  TENDONS,
+  JOINTS,
+  BONES,
+  VESSELS,
+  STRUCTURAL_ELEMENTS,
+  STRUCTURAL_KIND_LABELS,
+  findStructuralElement,
 };
 
 export interface CrossReferenceBundle {
@@ -93,6 +114,11 @@ export interface CrossReferenceBundle {
   acupoints: Acupoint[];
   chains: MyofascialChain[];
   neuro: NeuroPhysiologyProfile[];
+  fascias: StructuralElementProfile[];
+  tendons: StructuralElementProfile[];
+  joints: StructuralElementProfile[];
+  bones: StructuralElementProfile[];
+  vessels: StructuralElementProfile[];
 }
 
 export function getEntityTitle(entity: SelectedEntity): string {
@@ -113,6 +139,15 @@ export function getEntityTitle(entity: SelectedEntity): string {
       return MYOFASCIAL_CHAINS.find((c) => c.id === entity.id)?.name ?? 'Миофасциальная цепь';
     case 'neuro':
       return NEURO_PROFILES.find((n) => n.id === entity.id)?.name ?? 'Нервная система и позы';
+    case 'fascia':
+    case 'tendon':
+    case 'joint':
+    case 'bone':
+    case 'vessel':
+      return (
+        findStructuralElement(entity.type, entity.id)?.name ??
+        STRUCTURAL_KIND_LABELS[entity.type].singular
+      );
   }
 }
 
@@ -132,8 +167,26 @@ export function getEntityTypeLabel(type: EntityType): string {
       return 'Миофасциальная цепь';
     case 'neuro':
       return 'Нервная система и позы';
+    case 'fascia':
+      return 'Фасция';
+    case 'tendon':
+      return 'Сухожилие';
+    case 'joint':
+      return 'Сустав';
+    case 'bone':
+      return 'Кость / Ориентир';
+    case 'vessel':
+      return 'Сосуд / Коллектор';
   }
 }
+
+const STRUCTURAL_TYPES = new Set<StructuralElementKind>([
+  'fascia',
+  'tendon',
+  'joint',
+  'bone',
+  'vessel',
+]);
 
 export function getCrossReferences(entity: SelectedEntity): CrossReferenceBundle {
   const muscleIdSet = new Set<string>();
@@ -143,6 +196,7 @@ export function getCrossReferences(entity: SelectedEntity): CrossReferenceBundle
   const acupointIdSet = new Set<string>();
   const chainIdSet = new Set<string>();
   const neuroIdSet = new Set<string>();
+  const structuralIdSet = new Set<string>();
 
   if (entity.type === 'muscle') {
     const m = MUSCLES.find((item) => item.id === entity.id);
@@ -166,6 +220,9 @@ export function getCrossReferences(entity: SelectedEntity): CrossReferenceBundle
     NEURO_PROFILES.forEach((np) => {
       if (np.relatedMuscleIds.includes(entity.id)) neuroIdSet.add(np.id);
     });
+    STRUCTURAL_ELEMENTS.forEach((el) => {
+      if (el.relatedMuscleIds.includes(entity.id)) structuralIdSet.add(el.id);
+    });
   } else if (entity.type === 'organ') {
     const o = ORGANS.find((item) => item.id === entity.id);
     if (o) {
@@ -184,6 +241,9 @@ export function getCrossReferences(entity: SelectedEntity): CrossReferenceBundle
     });
     MYOFASCIAL_CHAINS.forEach((ch) => {
       if (ch.organIds.includes(entity.id)) chainIdSet.add(ch.id);
+    });
+    STRUCTURAL_ELEMENTS.forEach((el) => {
+      if (el.relatedOrganIds.includes(entity.id)) structuralIdSet.add(el.id);
     });
   } else if (entity.type === 'diaphragm') {
     const d = DIAPHRAGMS.find((item) => item.id === entity.id);
@@ -206,6 +266,9 @@ export function getCrossReferences(entity: SelectedEntity): CrossReferenceBundle
     });
     NEURO_PROFILES.forEach((np) => {
       if (np.relatedDiaphragmIds.includes(entity.id)) neuroIdSet.add(np.id);
+    });
+    STRUCTURAL_ELEMENTS.forEach((el) => {
+      if (el.relatedDiaphragmIds.includes(entity.id)) structuralIdSet.add(el.id);
     });
   } else if (entity.type === 'meridian') {
     const mer = MERIDIANS.find((item) => item.id === entity.id);
@@ -233,6 +296,9 @@ export function getCrossReferences(entity: SelectedEntity): CrossReferenceBundle
     NEURO_PROFILES.forEach((np) => {
       if (np.relatedMeridianIds.includes(entity.id)) neuroIdSet.add(np.id);
     });
+    STRUCTURAL_ELEMENTS.forEach((el) => {
+      if (el.relatedMeridianIds.includes(entity.id)) structuralIdSet.add(el.id);
+    });
   } else if (entity.type === 'acupoint') {
     const pt = ACUPOINTS.find((item) => item.id === entity.id);
     if (pt) {
@@ -249,6 +315,9 @@ export function getCrossReferences(entity: SelectedEntity): CrossReferenceBundle
       MYOFASCIAL_CHAINS.forEach((ch) => {
         if (ch.meridianIds.includes(pt.meridianId)) chainIdSet.add(ch.id);
       });
+      STRUCTURAL_ELEMENTS.forEach((el) => {
+        if (el.relatedMeridianIds.includes(pt.meridianId)) structuralIdSet.add(el.id);
+      });
     }
   } else if (entity.type === 'chain') {
     const ch = MYOFASCIAL_CHAINS.find((item) => item.id === entity.id);
@@ -258,12 +327,44 @@ export function getCrossReferences(entity: SelectedEntity): CrossReferenceBundle
       ch.diaphragmIds.forEach((id) => diaphragmIdSet.add(id));
       ch.meridianIds.forEach((id) => meridianIdSet.add(id));
     }
+    STRUCTURAL_ELEMENTS.forEach((el) => {
+      if (el.relatedChainIds.includes(entity.id)) structuralIdSet.add(el.id);
+    });
   } else if (entity.type === 'neuro') {
     const np = NEURO_PROFILES.find((item) => item.id === entity.id);
     if (np) {
       np.relatedMuscleIds.forEach((id) => muscleIdSet.add(id));
       np.relatedDiaphragmIds.forEach((id) => diaphragmIdSet.add(id));
       np.relatedMeridianIds.forEach((id) => meridianIdSet.add(id));
+    }
+  } else if (STRUCTURAL_TYPES.has(entity.type as StructuralElementKind)) {
+    const el = findStructuralElement(entity.type as StructuralElementKind, entity.id);
+    if (el) {
+      el.relatedMuscleIds.forEach((id) => muscleIdSet.add(id));
+      el.relatedOrganIds.forEach((id) => organIdSet.add(id));
+      el.relatedDiaphragmIds.forEach((id) => diaphragmIdSet.add(id));
+      el.relatedMeridianIds.forEach((id) => meridianIdSet.add(id));
+      el.relatedChainIds.forEach((id) => chainIdSet.add(id));
+
+      // Surface highest-affinity sibling structural elements sharing muscles (capped per kind for clarity)
+      const scoredByKind = new Map<StructuralElementKind, Array<{ id: string; score: number }>>();
+      STRUCTURAL_ELEMENTS.forEach((other) => {
+        if (other.id === el.id) return;
+        const sharedCount = other.relatedMuscleIds.filter((mid) =>
+          el.relatedMuscleIds.includes(mid)
+        ).length;
+        if (sharedCount === 0) return;
+        const score = sharedCount * 3 + (other.zone === el.zone ? 4 : 0) + (other.side === el.side ? 1 : 0);
+        const bucket = scoredByKind.get(other.kind) ?? [];
+        bucket.push({ id: other.id, score });
+        scoredByKind.set(other.kind, bucket);
+      });
+      scoredByKind.forEach((bucket) => {
+        bucket
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 8)
+          .forEach((entry) => structuralIdSet.add(entry.id));
+      });
     }
   }
 
@@ -294,6 +395,11 @@ export function getCrossReferences(entity: SelectedEntity): CrossReferenceBundle
     acupoints: ACUPOINTS.filter((p) => acupointIdSet.has(p.id)),
     chains: MYOFASCIAL_CHAINS.filter((c) => chainIdSet.has(c.id)),
     neuro: NEURO_PROFILES.filter((n) => neuroIdSet.has(n.id)),
+    fascias: FASCIAS.filter((f) => structuralIdSet.has(f.id)),
+    tendons: TENDONS.filter((t) => structuralIdSet.has(t.id)),
+    joints: JOINTS.filter((j) => structuralIdSet.has(j.id)),
+    bones: BONES.filter((b) => structuralIdSet.has(b.id)),
+    vessels: VESSELS.filter((v) => structuralIdSet.has(v.id)),
   };
 }
 

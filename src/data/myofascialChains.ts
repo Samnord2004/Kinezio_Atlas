@@ -426,18 +426,20 @@ export const MYOFASCIAL_CHAINS: MyofascialChain[] = [
     organIds: ['kidneys', 'urogenital', 'stomach', 'heart', 'lungs'],
     diaphragmIds: [
       'plantar-popliteal',
+      'urogenital-diaphragm',
       'pelvic-floor',
       'thoracoabdominal',
       'hyoid-thoracic-inlet',
+      'oral-diaphragm',
       'cranial-tentorium',
     ],
     meridianIds: ['kidney', 'liver', 'spleen', 'conception'],
     correctionSteps: [
       {
         modality: 'Висцеральная остеопатия',
-        title: 'Синхронизация 5 диафрагм по оси ГФЛ (снизу вверх)',
+        title: 'Синхронизация 7 диафрагм по оси ГФЛ (снизу вверх)',
         technique:
-          'Последовательное освобождение: тазовая диафрагма → ножки грудобрюшной диафрагмы и фасции почек/psoas → перикард и верхняя апертура грудной клетки → подъязычная кость → намёт мозжечка.',
+          'Последовательное освобождение: диафрагма стопы → мочеполовая и тазовая диафрагмы → ножки грудобрюшной диафрагмы и фасции почек/psoas → перикард и верхняя апертура грудной клетки → диафрагма рта → намёт мозжечка.',
         durationOrDose: '5–8 мин',
       },
       {

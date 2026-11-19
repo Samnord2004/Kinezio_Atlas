@@ -8,6 +8,7 @@ import {
   CIRCADIAN_MAP,
   INTAKE_QUESTIONS,
   MUSCLES,
+  STRUCTURAL_ELEMENTS,
   SYMPTOMS,
   matchCircadianPeriodsByText,
 } from '../data';
@@ -42,7 +43,7 @@ const VOICE_REGION_TEMPLATES: RegionTemplate[] = [
   {
     id: 'tmj',
     label: 'ВНЧС / челюсть',
-    keywords: ['внчс', 'челюст', 'жевательн', 'височно-нижнечелюст', 'бруксизм', 'скул'],
+    keywords: ['внчс', 'челюст', 'жевательн', 'височно-нижнечелюст', 'бруксизм', 'скул', 'сустав челюст'],
     defaultView: 'anterior',
     anteriorCoord: { centerX: 250, rightX: 222, leftX: 278, y: 108 },
     preferredMuscleIds: ['masseter', 'lateral-pterygoid'],
@@ -58,7 +59,7 @@ const VOICE_REGION_TEMPLATES: RegionTemplate[] = [
   {
     id: 'occiput',
     label: 'Затылок / голова сзади',
-    keywords: ['затыл', 'подзатылоч', 'субокципитал'],
+    keywords: ['затыл', 'подзатылоч', 'субокципитал', 'выйн', 'атлант'],
     defaultView: 'posterior',
     posteriorCoord: { centerX: 773, rightX: 794, leftX: 752, y: 106 },
     preferredMuscleIds: ['suboccipitals'],
@@ -66,7 +67,7 @@ const VOICE_REGION_TEMPLATES: RegionTemplate[] = [
   {
     id: 'head',
     label: 'Голова / лоб',
-    keywords: ['голов', 'лоб', 'мигрен', 'глаз'],
+    keywords: ['голов', 'лоб', 'мигрен', 'глаз', 'сосцевид', 'височная кост', 'внутренняя яремн'],
     defaultView: 'anterior',
     anteriorCoord: { centerX: 250, rightX: 230, leftX: 270, y: 58 },
     posteriorCoord: { centerX: 773, rightX: 792, leftX: 754, y: 74 },
@@ -75,7 +76,20 @@ const VOICE_REGION_TEMPLATES: RegionTemplate[] = [
   {
     id: 'neck',
     label: 'Шея / шейный отдел',
-    keywords: ['шея', 'шее', 'шею', 'шейном', 'шейный', 'шейн', 'горл', 'трапеци', 'надплеч'],
+    keywords: [
+      'шея',
+      'шее',
+      'шею',
+      'шейном',
+      'шейный',
+      'шейн',
+      'горл',
+      'трапеци',
+      'надплеч',
+      'лестничн',
+      'сонная артери',
+      'грудино-ключич',
+    ],
     defaultView: 'posterior',
     anteriorCoord: { centerX: 250, rightX: 230, leftX: 270, y: 152 },
     posteriorCoord: { centerX: 773, rightX: 816, leftX: 730, y: 156 },
@@ -84,7 +98,17 @@ const VOICE_REGION_TEMPLATES: RegionTemplate[] = [
   {
     id: 'shoulder',
     label: 'Плечо / дельта',
-    keywords: ['плеч', 'дельт', 'плечев'],
+    keywords: [
+      'плеч',
+      'дельт',
+      'плечев',
+      'вращательн',
+      'манжет',
+      'ключиц',
+      'акромион',
+      'сухожилие бицепс',
+      'подключичн',
+    ],
     defaultView: 'anterior',
     anteriorCoord: { centerX: 190, rightX: 148, leftX: 352, y: 214 },
     posteriorCoord: { centerX: 820, rightX: 896, leftX: 650, y: 214 },
@@ -101,7 +125,7 @@ const VOICE_REGION_TEMPLATES: RegionTemplate[] = [
   {
     id: 'elbow',
     label: 'Локоть / предплечье',
-    keywords: ['локт', 'локоть', 'локтев', 'предплеч', 'эпикондилит'],
+    keywords: ['локт', 'локоть', 'локтев', 'предплеч', 'эпикондилит', 'локоть теннисиста'],
     defaultView: 'anterior',
     anteriorCoord: { centerX: 120, rightX: 118, leftX: 382, y: 312 },
     posteriorCoord: { centerX: 890, rightX: 904, leftX: 642, y: 312 },
@@ -110,7 +134,18 @@ const VOICE_REGION_TEMPLATES: RegionTemplate[] = [
   {
     id: 'hand',
     label: 'Кисть / запястье / ладонь',
-    keywords: ['кист', 'запяст', 'ладон', 'палец руки', 'пальцы рук', 'лучезапяст'],
+    keywords: [
+      'кист',
+      'запяст',
+      'ладон',
+      'палец руки',
+      'пальцы рук',
+      'лучезапяст',
+      'карпальн',
+      'туннельн',
+      'апоневроз ладон',
+      'холодные кист',
+    ],
     defaultView: 'anterior',
     anteriorCoord: { centerX: 92, rightX: 92, leftX: 408, y: 396 },
     posteriorCoord: { centerX: 924, rightX: 926, leftX: 620, y: 396 },
@@ -119,7 +154,18 @@ const VOICE_REGION_TEMPLATES: RegionTemplate[] = [
   {
     id: 'chest',
     label: 'Грудь / грудина / рёбра',
-    keywords: ['груд', 'грудин', 'рёбра', 'ребра', 'ребр', 'межребер', 'сердц', 'ключ'],
+    keywords: [
+      'груд',
+      'грудин',
+      'рёбра',
+      'ребра',
+      'ребр',
+      'межребер',
+      'сердц',
+      'ключ',
+      'грудной проток',
+      'лимфатическ',
+    ],
     defaultView: 'anterior',
     anteriorCoord: { centerX: 250, rightX: 212, leftX: 288, y: 224 },
     posteriorCoord: { centerX: 773, rightX: 810, leftX: 736, y: 268 },
@@ -128,7 +174,7 @@ const VOICE_REGION_TEMPLATES: RegionTemplate[] = [
   {
     id: 'thoracic-back',
     label: 'Грудной отдел спины',
-    keywords: ['грудном отделе', 'грудной отдел', 'спина', 'спине', 'спину', 'широчайш'],
+    keywords: ['грудном отделе', 'грудной отдел', 'спина', 'спине', 'спину', 'широчайш', 'позвонк'],
     defaultView: 'posterior',
     posteriorCoord: { centerX: 773, rightX: 814, leftX: 732, y: 296 },
     preferredMuscleIds: ['erector-spinae', 'latissimus-dorsi', 'middle-lower-trapezius'],
@@ -136,7 +182,19 @@ const VOICE_REGION_TEMPLATES: RegionTemplate[] = [
   {
     id: 'abdomen',
     label: 'Живот / эпигастрий / подреберье',
-    keywords: ['живот', 'эпигастр', 'желуд', 'подребер', 'пупк', 'кишечник', 'подвздошн', 'пресс', 'пах'],
+    keywords: [
+      'живот',
+      'эпигастр',
+      'желуд',
+      'подребер',
+      'пупк',
+      'кишечник',
+      'подвздошн',
+      'пресс',
+      'пах',
+      'брюшн',
+      'симфиз',
+    ],
     defaultView: 'anterior',
     anteriorCoord: { centerX: 250, rightX: 216, leftX: 284, y: 344 },
     preferredMuscleIds: ['rectus-abdominis', 'obliques-abdominis', 'iliopsoas'],
@@ -144,7 +202,18 @@ const VOICE_REGION_TEMPLATES: RegionTemplate[] = [
   {
     id: 'lumbar',
     label: 'Поясница / крестец / КПС',
-    keywords: ['поясниц', 'пояснич', 'крестц', 'крестец', 'кпс', 'люмбаг', 'низ спины'],
+    keywords: [
+      'поясниц',
+      'пояснич',
+      'крестц',
+      'крестец',
+      'кпс',
+      'люмбаг',
+      'низ спины',
+      'грудопоясничн',
+      'грыж',
+      'протруз',
+    ],
     defaultView: 'posterior',
     posteriorCoord: { centerX: 773, rightX: 804, leftX: 742, y: 382 },
     anteriorCoord: { centerX: 250, rightX: 220, leftX: 280, y: 425 },
@@ -153,7 +222,7 @@ const VOICE_REGION_TEMPLATES: RegionTemplate[] = [
   {
     id: 'glute',
     label: 'Ягодица / таз / грушевидная',
-    keywords: ['ягодиц', 'ягодич', 'грушевид', 'таз', 'тазу', 'ишиас', 'седалищ'],
+    keywords: ['ягодиц', 'ягодич', 'грушевид', 'таз', 'тазу', 'ишиас', 'седалищ', 'копчик'],
     defaultView: 'posterior',
     posteriorCoord: { centerX: 773, rightX: 818, leftX: 728, y: 448 },
     anteriorCoord: { centerX: 250, rightX: 185, leftX: 315, y: 458 },
@@ -162,7 +231,18 @@ const VOICE_REGION_TEMPLATES: RegionTemplate[] = [
   {
     id: 'hip-thigh',
     label: 'Бедро / тазобедренный сустав',
-    keywords: ['бедр', 'бедро', 'тазобедрен', 'квадрицепс', 'хамстринг', 'бицепс бедра', 'приводящ'],
+    keywords: [
+      'бедр',
+      'бедро',
+      'тазобедрен',
+      'квадрицепс',
+      'хамстринг',
+      'бицепс бедра',
+      'приводящ',
+      'илиотибиал',
+      'широкая фасци',
+      'бедренн',
+    ],
     defaultView: 'anterior',
     anteriorCoord: { centerX: 212, rightX: 205, leftX: 295, y: 538 },
     posteriorCoord: { centerX: 773, rightX: 816, leftX: 730, y: 550 },
@@ -171,7 +251,16 @@ const VOICE_REGION_TEMPLATES: RegionTemplate[] = [
   {
     id: 'knee',
     label: 'Колено / коленный сустав',
-    keywords: ['колен', 'подколен', 'надколен', 'мениск'],
+    keywords: [
+      'колен',
+      'подколен',
+      'надколен',
+      'мениск',
+      'крестообраз',
+      'гусиной лапк',
+      'сустав колен',
+      'связк',
+    ],
     defaultView: 'anterior',
     anteriorCoord: { centerX: 212, rightX: 208, leftX: 292, y: 634 },
     posteriorCoord: { centerX: 773, rightX: 814, leftX: 732, y: 628 },
@@ -180,7 +269,19 @@ const VOICE_REGION_TEMPLATES: RegionTemplate[] = [
   {
     id: 'calf',
     label: 'Голень / икра / ахилл',
-    keywords: ['икр', 'икронож', 'ахилл', 'голен', 'камбаловид', 'большеберцов', 'малоберцов'],
+    keywords: [
+      'икр',
+      'икронож',
+      'ахилл',
+      'голен',
+      'камбаловид',
+      'большеберцов',
+      'малоберцов',
+      'отёк ног',
+      'отек ног',
+      'венозн',
+      'варикоз',
+    ],
     defaultView: 'posterior',
     posteriorCoord: { centerX: 773, rightX: 814, leftX: 732, y: 710 },
     anteriorCoord: { centerX: 212, rightX: 208, leftX: 292, y: 720 },
@@ -189,7 +290,19 @@ const VOICE_REGION_TEMPLATES: RegionTemplate[] = [
   {
     id: 'ankle-foot',
     label: 'Стопа / голеностоп / пятка',
-    keywords: ['стоп', 'голеностоп', 'лодыж', 'пятк', 'подошв', 'свод стопы'],
+    keywords: [
+      'стоп',
+      'голеностоп',
+      'лодыж',
+      'пятк',
+      'подошв',
+      'свод стопы',
+      'шпор',
+      'фасцит',
+      'таранн',
+      'ладьевид',
+      'холодные стоп',
+    ],
     defaultView: 'anterior',
     anteriorCoord: { centerX: 212, rightX: 208, leftX: 292, y: 808 },
     posteriorCoord: { centerX: 773, rightX: 814, leftX: 732, y: 806 },
@@ -409,6 +522,7 @@ export interface ParsedVoiceComplaintResult {
   circadianPeriod?: CircadianPeriodId;
   stage: ComplaintStageKey;
   matchedSymptom?: SymptomProfile;
+  matchedStructuralTitles?: string[];
   painPoints: PainMapPoint[];
   recommendedMuscleIds: string[];
   matchedQuestionIds: string[];
@@ -512,6 +626,20 @@ export function parseVoiceComplaint(rawTranscript: string): ParsedVoiceComplaint
     CIRCADIAN_MAP[circadianPeriod].muscleIds.forEach((id) => muscleSet.add(id));
   }
 
+  // Match newly expanded anatomical structures (fascia, tendon, joint, bone, vessel)
+  const matchedStructural = STRUCTURAL_ELEMENTS.filter((el) => {
+    const score = fuzzyMatchScore(
+      cleanedText,
+      `${el.name} ${el.categoryLabel} ${el.anatomyAndLocation} ${el.dysfunctionSigns.join(' ')}`,
+      el.name
+    );
+    return score >= 52;
+  }).slice(0, 3);
+
+  matchedStructural.forEach((el) => {
+    el.relatedMuscleIds.forEach((mId) => muscleSet.add(mId));
+  });
+
   // Match up to 2 relevant questionnaire items so live Triad profile updates naturally
   const matchedQuestionIds: string[] = [];
   if (cleanedText.length >= 4) {
@@ -539,6 +667,11 @@ export function parseVoiceComplaint(rawTranscript: string): ParsedVoiceComplaint
   if (matchedSymptom) {
     bodyProcessesNoteParts.push(`Симптом справочника: ${matchedSymptom.title}`);
   }
+  if (matchedStructural.length > 0) {
+    bodyProcessesNoteParts.push(
+      `Связанные структуры Атласа: ${matchedStructural.map((s) => s.name).join(', ')}`
+    );
+  }
   bodyProcessesNoteParts.push(`Диктовка врача: «${cleanedText}»`);
 
   const chiefComplaint =
@@ -551,6 +684,8 @@ export function parseVoiceComplaint(rawTranscript: string): ParsedVoiceComplaint
     circadianPeriod,
     stage,
     matchedSymptom,
+    matchedStructuralTitles:
+      matchedStructural.length > 0 ? matchedStructural.map((s) => s.name) : undefined,
     painPoints,
     recommendedMuscleIds: Array.from(muscleSet),
     matchedQuestionIds,

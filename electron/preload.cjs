@@ -18,4 +18,8 @@ contextBridge.exposeInMainWorld('kinezioDesktop', {
   requestMicrophoneAccess: () => ipcRenderer.invoke('kinezio:request-microphone'),
   openMicrophoneSettings: () => ipcRenderer.invoke('kinezio:open-mic-settings'),
   checkForUpdates: (feedUrl) => ipcRenderer.invoke('kinezio:check-updates', feedUrl),
+  openUpdatePackage: () => ipcRenderer.invoke('kinezio:open-update-package'),
+  speechCacheRead: (cacheKey) => ipcRenderer.invoke('kinezio:speech-cache-read', cacheKey),
+  speechCacheWrite: (cacheKey, bytes, contentType) =>
+    ipcRenderer.invoke('kinezio:speech-cache-write', cacheKey, bytes, contentType),
 });

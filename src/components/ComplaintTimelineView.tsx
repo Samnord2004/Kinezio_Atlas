@@ -1052,7 +1052,7 @@ export const ComplaintTimelineView: React.FC<ComplaintTimelineViewProps> = ({
                   <Activity className="w-8 h-8 text-slate-300 mx-auto" />
                   <p className="text-xs text-slate-600">
                     На временной шкале пациента пока нет записей. Добавьте эпизод жалобы или
-                    сохраните приём в разделе «Опросник ММТ».
+                    сохраните приём в разделе «Анамнез и ММТ».
                   </p>
                 </div>
               ) : (

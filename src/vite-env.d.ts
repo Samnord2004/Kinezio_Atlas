@@ -36,6 +36,22 @@ interface KinezioDesktopBridge {
     };
     error?: string;
   }>;
+  openUpdatePackage?: () => Promise<{
+    canceled: boolean;
+    ok: boolean;
+    filePath?: string;
+    error?: string;
+  }>;
+  speechCacheRead?: (cacheKey: string) => Promise<{
+    ok: boolean;
+    bytes?: Uint8Array;
+    contentType?: string;
+  }>;
+  speechCacheWrite?: (
+    cacheKey: string,
+    bytes: Uint8Array,
+    contentType?: string
+  ) => Promise<{ ok: boolean; error?: string }>;
 }
 
 interface Window {

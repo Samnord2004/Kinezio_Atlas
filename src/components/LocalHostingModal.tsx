@@ -35,6 +35,7 @@ import {
 import {
   applyServiceWorkerUpdate,
   checkForAppUpdates,
+  createSimulatedUpdateTestResult,
   getCurrentAppVersion,
   getLastUpdateCheck,
   getUpdateFeedUrl,
@@ -77,7 +78,7 @@ const MAC_COMMANDS = [
   {
     id: 'dist-mac',
     title: '1. Сборка готового установщика .dmg для macOS (Apple Silicon + Intel)',
-    desc: 'Собирает production-бандл с относительными путями (VITE_ELECTRON=1) и упаковывает приложение в КинезиоАтлас-1.2.0-universal.dmg в папке release/. Запускается в Терминале на macOS.',
+    desc: 'Собирает production-бандл с относительными путями (VITE_ELECTRON=1) и упаковывает приложение в КинезиоАтлас-1.4.0-universal.dmg в папке release/. Запускается в Терминале на macOS.',
     cmd: 'npm install && npm run dist:mac',
   },
   {
@@ -415,6 +416,26 @@ export const LocalHostingModal: React.FC<LocalHostingModalProps> = ({
       showNotice('err', err instanceof Error ? err.message : 'Некорректный файл манифеста');
     } finally {
       e.target.value = '';
+    }
+  };
+
+  const handleSimulateUpdateTest = () => {
+    const sim = createSimulatedUpdateTestResult();
+    setUpdateResult(sim);
+    showNotice('ok', 'Запущен тестовый сценарий проверки обновления (без перезаписи базы).');
+  };
+
+  const handleOpenInstallerPackage = async () => {
+    if (!window.kinezioDesktop?.openUpdatePackage) return;
+    const res = await window.kinezioDesktop.openUpdatePackage();
+    if (res.canceled) return;
+    if (res.ok) {
+      showNotice(
+        'ok',
+        `Образ установщика открыт (${res.filePath}). Перетащите КинезиоАтлас в «Программы» с заменой и перезапустите приложение.`
+      );
+    } else {
+      showNotice('err', res.error || 'Не удалось открыть выбранный файл обновления');
     }
   };
 
@@ -1022,7 +1043,7 @@ export const LocalHostingModal: React.FC<LocalHostingModalProps> = ({
           {/* ==================== TAB 3: UPDATES ==================== */}
           {activeTab === 'updates' && (
             <div className="space-y-5">
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
                   <div className="text-[11px] text-slate-500">Установленная сборка</div>
                   <div className="text-xl font-bold font-mono tabular-nums text-slate-900">
@@ -1051,6 +1072,33 @@ export const LocalHostingModal: React.FC<LocalHostingModalProps> = ({
                     <PackageCheck className="w-3.5 h-3.5" />
                     <span>Офлайн-пакет (version.json)</span>
                   </button>
+                  <button
+                    type="button"
+                    onClick={handleSimulateUpdateTest}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-blue-800 bg-blue-50 border border-blue-200 hover:bg-blue-100 rounded-lg cursor-pointer whitespace-nowrap"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Тест обновления</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCreateBackup}
+                    disabled={busyAction === 'create-backup'}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded-lg cursor-pointer whitespace-nowrap"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Backup перед обновлением</span>
+                  </button>
+                  {isElectron && (
+                    <button
+                      type="button"
+                      onClick={() => void handleOpenInstallerPackage()}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-800 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg cursor-pointer whitespace-nowrap"
+                    >
+                      <FolderOpen className="w-3.5 h-3.5" />
+                      <span>Установить из .dmg / .zip</span>
+                    </button>
+                  )}
                   <input
                     ref={manifestFileRef}
                     type="file"
@@ -1064,7 +1112,7 @@ export const LocalHostingModal: React.FC<LocalHostingModalProps> = ({
               {/* Update Feed URL configuration */}
               <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-2">
                 <label className="block font-semibold text-slate-900">
-                  Источник проверки обновлений (URL файла <code>version.json</code> или GitHub Releases)
+                  Источник проверки обновлений (URL или локальный путь к файлу <code>version.json</code>)
                 </label>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
@@ -1088,7 +1136,8 @@ export const LocalHostingModal: React.FC<LocalHostingModalProps> = ({
                 <p className="text-[11px] text-slate-500 leading-relaxed">
                   В веб/PWA-режиме при проверке также опрашивается кэш Service Worker, и при наличии
                   свежей сборки появляется кнопка мгновенной перезагрузки. В macOS-версии проверка
-                  сравнивает удалённый <code>version.json</code> и открывает ссылку на новый <code>.dmg</code>.
+                  поддерживает как удалённый <code>https://.../version.json</code>, так и локальный
+                  файл на диске / в облачной папке (например, <code>/Users/имя/Yandex.Disk/version.json</code>).
                 </p>
               </div>
 
@@ -1117,33 +1166,46 @@ export const LocalHostingModal: React.FC<LocalHostingModalProps> = ({
                     </ul>
                   )}
 
-                  {updateResult.status === 'sw-ready' && (
-                    <button
-                      type="button"
-                      onClick={() => applyServiceWorkerUpdate()}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg cursor-pointer"
-                    >
-                      <RefreshCw className="w-3.5 h-3.5" />
-                      <span>Установить обновление и перезагрузить приложение</span>
-                    </button>
-                  )}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {updateResult.status === 'sw-ready' && (
+                      <button
+                        type="button"
+                        onClick={() => applyServiceWorkerUpdate()}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg cursor-pointer"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Установить обновление и перезагрузить приложение</span>
+                      </button>
+                    )}
 
-                  {updateResult.status === 'remote-available' && updateResult.downloadUrl && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (window.kinezioDesktop) {
-                          window.kinezioDesktop.openExternal(updateResult.downloadUrl!);
-                        } else {
-                          window.open(updateResult.downloadUrl, '_blank', 'noopener,noreferrer');
-                        }
-                      }}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg cursor-pointer"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Скачать обновление (.dmg / дистрибутив)</span>
-                    </button>
-                  )}
+                    {updateResult.status === 'remote-available' && updateResult.downloadUrl && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.kinezioDesktop) {
+                            window.kinezioDesktop.openExternal(updateResult.downloadUrl!);
+                          } else {
+                            window.open(updateResult.downloadUrl, '_blank', 'noopener,noreferrer');
+                          }
+                        }}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Скачать обновление (.dmg / дистрибутив)</span>
+                      </button>
+                    )}
+
+                    {updateResult.status === 'remote-available' && isElectron && (
+                      <button
+                        type="button"
+                        onClick={() => void handleOpenInstallerPackage()}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-800 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg cursor-pointer"
+                      >
+                        <FolderOpen className="w-3.5 h-3.5" />
+                        <span>Открыть скачанный .dmg</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -1151,11 +1213,59 @@ export const LocalHostingModal: React.FC<LocalHostingModalProps> = ({
               <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-2">
                 <div className="font-bold text-slate-900">Что нового в текущей версии v{appVersion}</div>
                 <ul className="list-disc pl-4 space-y-1 text-slate-700 leading-relaxed">
-                  <li>Подготовка сборки настольного приложения для macOS в формат <code>.dmg</code> (Electron Universal).</li>
-                  <li>Редактор данных всех карточек Атласа и Справочника коррекции с заметками врача и сбросом.</li>
-                  <li>Выбор папок на диске для основной базы, автоматического зеркала и архива резервных копий.</li>
-                  <li>Обмен пакетами <code>.kinezio.json</code> между ПК через Яндекс.Диск и Google Диск с умным слиянием.</li>
+                  <li>
+                    <strong>Интерактивный граф связей мышцы (панель инспектора):</strong>{' '}
+                    наглядная схема «Мышца ↔ Диафрагмы ↔ Меридианы ↔ Органы» с подсветкой контурных
+                    взаимосвязей, фильтрами и переходом к любой структуре по клику.
+                  </li>
+                  <li>
+                    <strong>Полный корпус анатомии и 7 диафрагм тела:</strong>{' '}
+                    640 мышц, 206 костей скелета, 360 суставов (крупные/средние и мелкие амортизационные),
+                    24 фасции в 3 слоях (поверхностные, глубокие, висцеральные) и все 7 функциональных
+                    диафрагм, включая диафрагму рта и мочеполовую диафрагму.
+                  </li>
+                  <li>
+                    <strong>Открытые анатомические иллюстрации + загрузка своих фото:</strong>{' '}
+                    таблицы Henry Gray / OpenStax / Wikimedia Commons подключены ко всем диафрагмам, органам,
+                    фасциям, суставам, костям и мышцам с возможностью загрузки собственных фото и стрелок.
+                  </li>
+                  <li>
+                    <strong>Обучение (Этап 10 и обновлённый Этап 4) + CRM/Whisper:</strong>{' '}
+                    новый курс по 7 диафрагмам, 360 суставам и 3 слоям фасций, офлайн-распознавание русской
+                    речи (Whisper) для macOS, поэтапный Анамнез, фото-анализ углов и разбор после ММТ.
+                  </li>
                 </ul>
+              </div>
+
+              {/* Built-in Step-by-step Update Guide */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5 text-xs text-slate-700 leading-relaxed">
+                <div className="font-bold text-slate-900">
+                  Пошаговая инструкция по обновлению и проверке механизма обновлений
+                </div>
+                <ol className="list-decimal pl-5 space-y-1.5">
+                  <li>
+                    <strong>Шаг 1. Резервная копия (рекомендуется):</strong> нажмите «Backup перед обновлением»
+                    выше — база пациентов, фото и правки Атласа сохранятся на диск. Данные macOS также
+                    хранятся отдельно в <code>~/Library/Application Support/КинезиоАтлас</code> и при замене
+                    программы не удаляются.
+                  </li>
+                  <li>
+                    <strong>Шаг 2. Проверка механизма обновлений:</strong> нажмите «Тест обновления» для
+                    симуляции баннера новой версии или выберите новый <code>public/version.json</code> (v1.4.0)
+                    из предыдущей версии v1.3.0 через кнопку «Офлайн-пакет (version.json)».
+                  </li>
+                  <li>
+                    <strong>Шаг 3. Обновление настольной версии macOS (.dmg):</strong> выполните в папке проекта{' '}
+                    <code>npm run dist:mac</code> (или скачайте готовый <code>КинезиоАтлас-1.4.0-universal.dmg</code>),
+                    откройте образ (кнопка «Установить из .dmg / .zip») и перетащите приложение в «Программы» с
+                    заменой.
+                  </li>
+                  <li>
+                    <strong>Шаг 4. Обновление локальной папки / Веб-PWA:</strong> замените файлы проекта,
+                    выполните <code>npm install && npm run serve:local</code>, затем откройте вкладку «Обновления»
+                    и нажмите «Проверить обновления» → «Установить обновление и перезагрузить».
+                  </li>
+                </ol>
               </div>
             </div>
           )}
@@ -1252,12 +1362,21 @@ export const LocalHostingModal: React.FC<LocalHostingModalProps> = ({
               type="button"
               onClick={() => {
                 downloadTextFile(
-                  `KinezioAtlas-manifest-v${appVersion}.json`,
+                  `version.json`,
                   JSON.stringify(
                     {
                       version: appVersion,
                       releaseDate: new Date().toISOString().slice(0, 10),
-                      notes: ['Локальный снимок версии КинезиоАтлас'],
+                      minSchemaVersion: 2,
+                      notes: [
+                        'Интерактивный граф связей мышцы в панели инспектора (диафрагмы, меридианы, органы)',
+                        'Полный корпус анатомии: 640 мышц, 206 костей, 360 суставов, 24 фасции (3 слоя) и 7 диафрагм тела',
+                        'Иллюстрации Henry Gray / OpenStax / Wikimedia Commons для всех разделов + загрузка своих фото',
+                        'Этап 10 обучения, офлайн-распознавание речи (Whisper) для macOS, поэтапный Анамнез и фото-анализ углов',
+                      ],
+                      dmgUrl: '',
+                      zipUrl: '',
+                      releasesPageUrl: '',
                     },
                     null,
                     2

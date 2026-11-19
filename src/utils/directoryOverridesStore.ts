@@ -33,6 +33,11 @@ export const SECTION_LABELS: Record<EditableDirectorySection, string> = {
   taping: 'Кинезиотейпирование',
   trust: 'Мануальная манипуляция (Траст)',
   craniosacral: 'Краниосакральная коррекция',
+  fascia: 'Фасциальная структура',
+  tendon: 'Сухожилие и связка',
+  joint: 'Суставной комплекс',
+  bone: 'Костный ориентир / кость',
+  vessel: 'Сосуд / лимфоколлектор',
 };
 
 export const EDITABLE_FIELD_SCHEMAS: Record<EditableDirectorySection, EditableFieldDescriptor[]> = {
@@ -197,6 +202,51 @@ export const EDITABLE_FIELD_SCHEMAS: Record<EditableDirectorySection, EditableFi
     { path: 'dysfunctionSigns', label: 'Признаки дисфункции (с новой строки)', kind: 'list' },
     { path: 'clinicalConsequences', label: 'Клинические последствия (с новой строки)', kind: 'list' },
     { path: 'safetyAndErrors', label: 'Противопоказания и ошибки выполнения (с новой строки)', kind: 'list' },
+  ],
+  fascia: [
+    { path: 'name', label: 'Название фасциальной структуры', kind: 'text' },
+    { path: 'latinName', label: 'Латинское название', kind: 'text' },
+    { path: 'anatomyAndLocation', label: 'Топография и анатомический ход', kind: 'textarea' },
+    { path: 'biomechanicsAndFunction', label: 'Биомеханическая и дренажная функция', kind: 'textarea' },
+    { path: 'palpationLandmark', label: 'Пальпаторный ориентир', kind: 'textarea' },
+    { path: 'kinesiologyTestAndProvocation', label: 'Провокация и ММТ-диагностика', kind: 'textarea' },
+    { path: 'dysfunctionSigns', label: 'Признаки дисфункции (с новой строки)', kind: 'list' },
+  ],
+  tendon: [
+    { path: 'name', label: 'Название сухожилия / связки', kind: 'text' },
+    { path: 'latinName', label: 'Латинское название', kind: 'text' },
+    { path: 'anatomyAndLocation', label: 'Анатомия и прикрепления', kind: 'textarea' },
+    { path: 'biomechanicsAndFunction', label: 'Биомеханическая функция', kind: 'textarea' },
+    { path: 'palpationLandmark', label: 'Пальпаторный ориентир и ТЛ', kind: 'textarea' },
+    { path: 'kinesiologyTestAndProvocation', label: 'Тест Гольджи / провокация ММТ', kind: 'textarea' },
+    { path: 'dysfunctionSigns', label: 'Признаки тендинопатии (с новой строки)', kind: 'list' },
+  ],
+  joint: [
+    { path: 'name', label: 'Название сустава', kind: 'text' },
+    { path: 'latinName', label: 'Латинское название', kind: 'text' },
+    { path: 'anatomyAndLocation', label: 'Анатомическое строение', kind: 'textarea' },
+    { path: 'biomechanicsAndFunction', label: 'Биомеханика и артрокинематика', kind: 'textarea' },
+    { path: 'palpationLandmark', label: 'Суставная щель и ориентир', kind: 'textarea' },
+    { path: 'kinesiologyTestAndProvocation', label: 'Ортопедические тесты и ТЛ', kind: 'textarea' },
+    { path: 'dysfunctionSigns', label: 'Признаки суставного блока (с новой строки)', kind: 'list' },
+  ],
+  bone: [
+    { path: 'name', label: 'Название кости / ориентира', kind: 'text' },
+    { path: 'latinName', label: 'Латинское название', kind: 'text' },
+    { path: 'anatomyAndLocation', label: 'Топография и ориентиры', kind: 'textarea' },
+    { path: 'biomechanicsAndFunction', label: 'Остеопатическая роль и ось движения', kind: 'textarea' },
+    { path: 'palpationLandmark', label: 'Костный ориентир для пальпации', kind: 'textarea' },
+    { path: 'kinesiologyTestAndProvocation', label: 'ТЛ и вектор коррекции в ММТ', kind: 'textarea' },
+    { path: 'dysfunctionSigns', label: 'Признаки костной фиксации (с новой строки)', kind: 'list' },
+  ],
+  vessel: [
+    { path: 'name', label: 'Название сосуда / коллектора', kind: 'text' },
+    { path: 'latinName', label: 'Латинское название', kind: 'text' },
+    { path: 'anatomyAndLocation', label: 'Анатомический ход и туннели', kind: 'textarea' },
+    { path: 'biomechanicsAndFunction', label: 'Гемодинамическая / лимфодренажная роль', kind: 'textarea' },
+    { path: 'palpationLandmark', label: 'Проекция пульсации / дренажной точки', kind: 'textarea' },
+    { path: 'kinesiologyTestAndProvocation', label: 'Сосудистые пробы и ТЛ в ММТ', kind: 'textarea' },
+    { path: 'dysfunctionSigns', label: 'Признаки компрессии / застоя (с новой строки)', kind: 'list' },
   ],
 };
 

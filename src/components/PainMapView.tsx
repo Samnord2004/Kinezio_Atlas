@@ -9,19 +9,25 @@ import {
   inferZoneFromCoord,
 } from '../data/musclePlateCoords';
 import {
+  BodyPosturePosition,
   PainMapPoint,
   PainMarkerType,
   SelectedEntity,
+  TriggerPostureBehavior,
 } from '../types/atlas';
 import {
+  BODY_POSTURE_META,
   PAIN_MARKER_META,
+  TRIGGER_BEHAVIOR_META,
   buildPainMapRecommendations,
   getEffectiveMuscleIdsForPoint,
 } from '../utils/painMapRecommendations';
 import {
   Activity,
+  AlertTriangle,
   ArrowRight,
   ArrowUpRight,
+  Brain,
   Crosshair,
   Eye,
   EyeOff,
@@ -43,6 +49,8 @@ interface PainMapViewProps {
   onSaveToPatient?: () => Promise<void> | void;
   hasLinkedPatient?: boolean;
   saveFeedback?: string | null;
+  onProceedToPosture?: () => void;
+  onGoToMmt?: () => void;
 }
 
 type ViewFocus = 'both' | 'anterior' | 'posterior';
@@ -63,10 +71,16 @@ export const PainMapView: React.FC<PainMapViewProps> = ({
   onSaveToPatient,
   hasLinkedPatient = false,
   saveFeedback = null,
+  onProceedToPosture,
+  onGoToMmt,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   const [activeTool, setActiveTool] = useState<PainMarkerType>('pain');
+  const [activePosture, setActivePosture] = useState<BodyPosturePosition>('standing');
+  const [defaultTriggerBehavior, setDefaultTriggerBehavior] =
+    useState<TriggerPostureBehavior>('varies_with_posture');
+  const [postureFilter, setPostureFilter] = useState<'all' | BodyPosturePosition>('all');
   const [viewFocus, setViewFocus] = useState<ViewFocus>('both');
   const [defaultIntensity, setDefaultIntensity] = useState<number>(6);
   const [showMuscleLandmarks, setShowMuscleLandmarks] = useState<boolean>(true);
@@ -80,6 +94,11 @@ export const PainMapView: React.FC<PainMapViewProps> = ({
     nearestMuscleName: string;
   } | null>(null);
   const [confirmClearAll, setConfirmClearAll] = useState(false);
+
+  const visiblePoints = useMemo(() => {
+    if (postureFilter === 'all') return points;
+    return points.filter((p) => (p.posture ?? 'standing') === postureFilter);
+  }, [points, postureFilter]);
 
   const selectedPoint = useMemo(
     () => points.find((p) => p.id === selectedPointId) ?? null,
@@ -149,6 +168,8 @@ export const PainMapView: React.FC<PainMapViewProps> = ({
       x: coord.x,
       y: coord.y,
       intensity: activeTool === 'weak_muscle' ? undefined : defaultIntensity,
+      posture: activePosture,
+      triggerBehavior: defaultTriggerBehavior,
       zoneId,
       matchedMuscleIds,
       primaryMuscleId: matchedMuscleIds[0],
@@ -207,19 +228,36 @@ export const PainMapView: React.FC<PainMapViewProps> = ({
                 </span>
               </button>
             )}
-            {recommendations.recommendedQueueMuscleIds.length > 0 && (
+            {onProceedToPosture && (
               <button
                 type="button"
-                onClick={() =>
-                  onAddMusclesToQueue(
-                    recommendations.recommendedQueueMuscleIds,
-                    recommendations.recommendedQueueMuscleIds[0]
-                  )
-                }
+                onClick={onProceedToPosture}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                <span>Далее: Анализ углов по фото</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {(recommendations.recommendedQueueMuscleIds.length > 0 || onGoToMmt) && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (recommendations.recommendedQueueMuscleIds.length > 0) {
+                    onAddMusclesToQueue(
+                      recommendations.recommendedQueueMuscleIds,
+                      recommendations.recommendedQueueMuscleIds[0]
+                    );
+                  } else if (onGoToMmt) {
+                    onGoToMmt();
+                  }
+                }}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
               >
                 <span>
-                  В план ММТ ({recommendations.recommendedQueueMuscleIds.length})
+                  Перейти к ММТ
+                  {recommendations.recommendedQueueMuscleIds.length > 0
+                    ? ` (+${recommendations.recommendedQueueMuscleIds.length})`
+                    : ''}
                 </span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
@@ -334,7 +372,133 @@ export const PainMapView: React.FC<PainMapViewProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Body Posture (Standing / Sitting / Lying) & Trigger Behavior Controls */}
+        <div className="pt-3 border-t border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-semibold text-slate-700">Положение тела при отметке:</span>
+            <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+              {(['standing', 'sitting', 'lying'] as BodyPosturePosition[]).map((pos) => (
+                <button
+                  key={pos}
+                  type="button"
+                  onClick={() => setActivePosture(pos)}
+                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    activePosture === pos
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {BODY_POSTURE_META[pos].label}
+                </button>
+              ))}
+            </div>
+
+            <span className="text-slate-300 hidden sm:inline">|</span>
+
+            <span className="font-medium text-slate-600">Реакция триггера:</span>
+            <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+              {(['varies_with_posture', 'constant_all_postures'] as TriggerPostureBehavior[]).map(
+                (beh) => (
+                  <button
+                    key={beh}
+                    type="button"
+                    onClick={() => setDefaultTriggerBehavior(beh)}
+                    className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                      defaultTriggerBehavior === beh
+                        ? beh === 'constant_all_postures'
+                          ? 'bg-violet-700 text-white shadow-xs'
+                          : 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {TRIGGER_BEHAVIOR_META[beh].shortLabel}
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-slate-500">Фильтр по позе:</span>
+            {(
+              [
+                { id: 'all' as const, label: `Все (${points.length})` },
+                { id: 'standing' as const, label: `Стоя (${recommendations.postureCounts.standing})` },
+                { id: 'sitting' as const, label: `Сидя (${recommendations.postureCounts.sitting})` },
+                { id: 'lying' as const, label: `Лёжа (${recommendations.postureCounts.lying})` },
+              ] as const
+            ).map((pf) => (
+              <button
+                key={pf.id}
+                type="button"
+                onClick={() => setPostureFilter(pf.id)}
+                className={`px-2 py-1 text-[11px] font-medium rounded border transition-colors whitespace-nowrap cursor-pointer ${
+                  postureFilter === pf.id
+                    ? 'bg-blue-50 border-blue-300 text-blue-800'
+                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                {pf.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
+
+      {/* Autonomic / Somatic Nervous System Alert when Trigger Does NOT Change across Standing/Sitting/Lying */}
+      {recommendations.autonomicSomaticAlert && (
+        <div className="p-4 bg-violet-50 border border-violet-300 rounded-xl space-y-2.5 text-xs">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle className="w-5 h-5 text-violet-700 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <div className="text-sm font-bold text-violet-950">
+                  Клинический сигнал: триггер/боль НЕ меняется при смене позы (Стоя / Сидя / Лёжа)
+                </div>
+                <p className="text-slate-700 leading-relaxed max-w-4xl">
+                  Когда болевой триггер остаётся одинаковым во всех трёх положениях (стоя, сидя и
+                  лёжа), ведущая причина выходит за рамки чистой гравитационной биомеханики — это
+                  прямой намёк на нарушение{' '}
+                  <strong>вегетативной (ВНС) и соматической нервной системы</strong> (центральная
+                  сенситизация, дисфункция блуждающего нерва, переключатель KI-27, краниосакральный
+                  или висцерально-вегетативный конфликт).
+                </p>
+              </div>
+            </div>
+
+            {onGoToMmt && (
+              <button
+                type="button"
+                onClick={onGoToMmt}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-violet-700 hover:bg-violet-800 rounded-lg cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <span>Проверить в ММТ (KI-27 / ТЛ НС)</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {recommendations.recommendedNeuroProfiles.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-violet-200/80">
+              <span className="font-semibold text-violet-900 inline-flex items-center gap-1">
+                <Brain className="w-3.5 h-3.5" />
+                Открыть протоколы НС в Атласе:
+              </span>
+              {recommendations.recommendedNeuroProfiles.map((np) => (
+                <button
+                  key={np.id}
+                  type="button"
+                  onClick={() => onOpenInAtlas({ type: 'neuro', id: np.id })}
+                  className="px-2.5 py-1 bg-white border border-violet-200 hover:bg-violet-100 text-violet-900 font-medium rounded-md cursor-pointer"
+                >
+                  {np.name} →
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Main Split Console: Left Silhouette Canvas (7 cols) + Right Point Editor & List (5 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -461,9 +625,11 @@ export const PainMapView: React.FC<PainMapViewProps> = ({
                 })}
 
               {/* Saved Patient Pain / Trigger / Weak Muscle Markers */}
-              {points.map((pt, idx) => {
+              {visiblePoints.map((pt) => {
+                const idx = points.findIndex((p) => p.id === pt.id);
                 const isSelected = pt.id === selectedPointId;
                 const meta = PAIN_MARKER_META[pt.type];
+                const isConstant = pt.triggerBehavior === 'constant_all_postures';
                 const haloRadius =
                   pt.type === 'pain'
                     ? 16 + (pt.intensity ?? 5) * 1.6
@@ -549,6 +715,22 @@ export const PainMapView: React.FC<PainMapViewProps> = ({
                     >
                       {idx + 1}
                     </text>
+
+                    {/* Posture Tag & Constant NS Marker Badge */}
+                    {(pt.posture || isConstant) && (
+                      <text
+                        x={0}
+                        y={-15}
+                        textAnchor="middle"
+                        fontSize={9}
+                        fontWeight={700}
+                        fill={isConstant ? '#6d28d9' : '#0f172a'}
+                        className="pointer-events-none select-none"
+                      >
+                        {pt.posture ? BODY_POSTURE_META[pt.posture].shortLabel : ''}
+                        {isConstant ? ' [НС!]' : ''}
+                      </text>
+                    )}
                   </g>
                 );
               })}
@@ -636,6 +818,71 @@ export const PainMapView: React.FC<PainMapViewProps> = ({
                       {PAIN_MARKER_META[t].shortLabel}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Body Posture & Trigger Invariance Selector */}
+              <div className="space-y-2 p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+                <div className="space-y-1">
+                  <span className="text-[11px] font-medium text-slate-600 block">
+                    Положение тела (для дифференциации триггера)
+                  </span>
+                  <div className="grid grid-cols-3 gap-1 p-0.5 bg-white border border-slate-200 rounded-md">
+                    {(['standing', 'sitting', 'lying'] as BodyPosturePosition[]).map((pos) => {
+                      const active = (selectedPoint.posture ?? 'standing') === pos;
+                      return (
+                        <button
+                          key={pos}
+                          type="button"
+                          onClick={() => updatePoint(selectedPoint.id, { posture: pos })}
+                          className={`py-1 px-2 text-[11px] font-medium rounded transition-colors cursor-pointer ${
+                            active
+                              ? 'bg-slate-900 text-white'
+                              : 'text-slate-600 hover:bg-slate-100'
+                          }`}
+                        >
+                          {BODY_POSTURE_META[pos].label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[11px] font-medium text-slate-600 block">
+                    Поведение триггера при смене позы
+                  </span>
+                  <div className="grid grid-cols-2 gap-1 p-0.5 bg-white border border-slate-200 rounded-md">
+                    {(
+                      ['varies_with_posture', 'constant_all_postures'] as TriggerPostureBehavior[]
+                    ).map((beh) => {
+                      const active =
+                        (selectedPoint.triggerBehavior ?? 'varies_with_posture') === beh;
+                      return (
+                        <button
+                          key={beh}
+                          type="button"
+                          onClick={() => updatePoint(selectedPoint.id, { triggerBehavior: beh })}
+                          className={`py-1 px-2 text-[11px] font-medium rounded transition-colors cursor-pointer ${
+                            active
+                              ? beh === 'constant_all_postures'
+                                ? 'bg-violet-700 text-white'
+                                : 'bg-blue-700 text-white'
+                              : 'text-slate-600 hover:bg-slate-100'
+                          }`}
+                        >
+                          {TRIGGER_BEHAVIOR_META[beh].shortLabel}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] text-slate-500 leading-snug">
+                    {
+                      TRIGGER_BEHAVIOR_META[
+                        selectedPoint.triggerBehavior ?? 'varies_with_posture'
+                      ].description
+                    }
+                  </p>
                 </div>
               </div>
 
@@ -799,10 +1046,12 @@ export const PainMapView: React.FC<PainMapViewProps> = ({
               </div>
             ) : (
               <div className="divide-y divide-slate-100 max-h-64 overflow-y-auto">
-                {points.map((pt, idx) => {
+                {visiblePoints.map((pt) => {
+                  const idx = points.findIndex((p) => p.id === pt.id);
                   const meta = PAIN_MARKER_META[pt.type];
                   const m = MUSCLES.find((item) => item.id === pt.primaryMuscleId);
                   const isSel = pt.id === selectedPointId;
+                  const isConst = pt.triggerBehavior === 'constant_all_postures';
                   return (
                     <div
                       key={pt.id}
@@ -812,21 +1061,28 @@ export const PainMapView: React.FC<PainMapViewProps> = ({
                       }`}
                     >
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2 text-xs">
+                        <div className="flex flex-wrap items-center gap-1.5 text-xs">
                           <span className="font-mono font-bold text-slate-500 tabular-nums">
                             #{idx + 1}
                           </span>
                           <span className={`font-semibold ${meta.textClass}`}>
                             {meta.shortLabel}
                           </span>
+                          {pt.posture && (
+                            <span className="px-1.5 py-0.2 bg-slate-100 text-slate-700 rounded text-[10px] font-medium">
+                              {BODY_POSTURE_META[pt.posture].shortLabel}
+                            </span>
+                          )}
+                          {isConst && (
+                            <span className="px-1.5 py-0.2 bg-violet-100 text-violet-800 rounded text-[10px] font-semibold">
+                              Неизм. (НС!)
+                            </span>
+                          )}
                           {pt.intensity !== undefined && (
                             <span className="font-mono text-[11px] text-slate-500 tabular-nums">
                               ВАШ {pt.intensity}/10
                             </span>
                           )}
-                          <span className="text-[11px] text-slate-400 font-mono tabular-nums">
-                            ({pt.x}, {pt.y})
-                          </span>
                         </div>
                         <div className="text-xs font-medium text-slate-900 truncate mt-0.5">
                           {m?.name ?? 'Мышца не выбрана'} ·{' '}

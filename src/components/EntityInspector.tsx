@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ACUPOINTS,
   ANATOMICAL_SIDE_META,
@@ -9,6 +9,7 @@ import {
   MYOFASCIAL_CHAINS,
   NEURO_PROFILES,
   ORGANS,
+  findStructuralElement,
   getCrossReferences,
   getEntityTitle,
   getEntityTypeLabel,
@@ -18,7 +19,12 @@ import {
   getRelatedMudrasAndNosodes,
   getTriadCorrections,
 } from '../data';
-import { CorrectionStep, SelectedEntity } from '../types/atlas';
+import {
+  CorrectionStep,
+  EditableDirectorySection,
+  SelectedEntity,
+  StructuralElementKind,
+} from '../types/atlas';
 import {
   Activity,
   ArrowLeft,
@@ -27,19 +33,17 @@ import {
   FlaskConical,
   Hand,
   Info,
-  Maximize2,
   Sparkles,
-  X,
 } from 'lucide-react';
 import { MMTSchematicDiagram } from './MMTSchematicDiagram';
 import { AcupunctureBodyMap } from './AcupunctureBodyMap';
 import { DirectoryPhotoGallery } from './DirectoryPhotoGallery';
+import { MuscleConnectionsGraph } from './MuscleConnectionsGraph';
 import {
   DirectoryCustomNoteBanner,
   DirectoryEditButton,
 } from './DirectoryEntryEditor';
 import { useDirectoryOverrides } from '../utils/directoryOverridesStore';
-import { EditableDirectorySection } from '../types/atlas';
 
 interface EntityInspectorProps {
   selectedEntity: SelectedEntity;
@@ -79,11 +83,10 @@ export const EntityInspector: React.FC<EntityInspectorProps> = ({
   onNavigateBack,
   onOpenTab,
 }) => {
-  const [imageZoom, setImageZoom] = useState<{
-    src: string;
-    title: string;
-    caption: string;
-  } | null>(null);
+  const [expandedCrossGroups, setExpandedCrossGroups] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    setExpandedCrossGroups({});
+  }, [selectedEntity]);
 
   const crossRefs = useMemo(() => getCrossReferences(selectedEntity), [selectedEntity]);
   const relatedMudrasAndNosodes = useMemo(
@@ -149,6 +152,20 @@ export const EntityInspector: React.FC<EntityInspectorProps> = ({
     return raw ? applyOverride('neuro', raw) : undefined;
   }, [selectedEntity, applyOverride]);
 
+  const structuralElement = useMemo(() => {
+    if (
+      selectedEntity.type !== 'fascia' &&
+      selectedEntity.type !== 'tendon' &&
+      selectedEntity.type !== 'joint' &&
+      selectedEntity.type !== 'bone' &&
+      selectedEntity.type !== 'vessel'
+    ) {
+      return undefined;
+    }
+    const raw = findStructuralElement(selectedEntity.type, selectedEntity.id);
+    return raw ? applyOverride(selectedEntity.type, raw) : undefined;
+  }, [selectedEntity, applyOverride]);
+
   const activeRawEntity = useMemo(() => {
     switch (selectedEntity.type) {
       case 'muscle':
@@ -165,6 +182,12 @@ export const EntityInspector: React.FC<EntityInspectorProps> = ({
         return MYOFASCIAL_CHAINS.find((c) => c.id === selectedEntity.id);
       case 'neuro':
         return NEURO_PROFILES.find((n) => n.id === selectedEntity.id);
+      case 'fascia':
+      case 'tendon':
+      case 'joint':
+      case 'bone':
+      case 'vessel':
+        return findStructuralElement(selectedEntity.type as StructuralElementKind, selectedEntity.id);
     }
   }, [selectedEntity]);
 
@@ -174,9 +197,9 @@ export const EntityInspector: React.FC<EntityInspectorProps> = ({
   );
 
   const zoneMeta = useMemo(() => {
-    const zId = muscle?.zone ?? organ?.zone ?? diaphragm?.zone;
+    const zId = muscle?.zone ?? organ?.zone ?? diaphragm?.zone ?? structuralElement?.zone;
     return zId ? ANATOMICAL_ZONES.find((z) => z.id === zId) : undefined;
-  }, [muscle, organ, diaphragm]);
+  }, [muscle, organ, diaphragm, structuralElement]);
 
   const entitySideLabel = useMemo(() => {
     if (muscle) {
@@ -189,8 +212,13 @@ export const EntityInspector: React.FC<EntityInspectorProps> = ({
       const s = getOrganSide(organ);
       return s === 'both' ? 'Передняя и задняя проекции' : ANATOMICAL_SIDE_META[s].label;
     }
+    if (structuralElement) {
+      return structuralElement.side === 'both'
+        ? 'Передняя и задняя проекции'
+        : ANATOMICAL_SIDE_META[structuralElement.side].label;
+    }
     return undefined;
-  }, [muscle, acupoint, organ]);
+  }, [muscle, acupoint, organ, structuralElement]);
 
   const correctionSteps: CorrectionStep[] = useMemo(() => {
     if (muscle) return muscle.correctionSteps;
@@ -199,12 +227,13 @@ export const EntityInspector: React.FC<EntityInspectorProps> = ({
     if (meridian) return meridian.correctionSteps;
     if (chain) return chain.correctionSteps;
     if (neuro) return neuro.correctionSteps;
+    if (structuralElement) return structuralElement.correctionSteps;
     if (acupoint) {
       const parentMeridian = MERIDIANS.find((m) => m.id === acupoint.meridianId);
       return parentMeridian?.correctionSteps ?? [];
     }
     return [];
-  }, [muscle, organ, diaphragm, meridian, acupoint, chain, neuro]);
+  }, [muscle, organ, diaphragm, meridian, acupoint, chain, neuro, structuralElement]);
 
   return (
     <div className="flex flex-col h-full bg-white border border-slate-200 rounded-xl overflow-hidden">
@@ -309,6 +338,12 @@ export const EntityInspector: React.FC<EntityInspectorProps> = ({
               <span>{neuro.category}</span>
             </>
           )}
+          {structuralElement && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>{structuralElement.categoryLabel}</span>
+            </>
+          )}
         </div>
 
         <div className="flex flex-wrap items-start justify-between gap-2">
@@ -320,6 +355,7 @@ export const EntityInspector: React.FC<EntityInspectorProps> = ({
                 meridian?.name ??
                 chain?.name ??
                 neuro?.name ??
+                structuralElement?.name ??
                 (acupoint ? `${acupoint.code} — ${acupoint.chineseName} (${acupoint.russianName})` : '')}
             </h2>
             {(muscle?.latinName ||
@@ -327,14 +363,16 @@ export const EntityInspector: React.FC<EntityInspectorProps> = ({
               diaphragm?.latinName ||
               meridian?.chineseName ||
               chain?.englishName ||
-              neuro?.latinOrSubtitle) && (
+              neuro?.latinOrSubtitle ||
+              structuralElement?.latinName) && (
               <p className="text-xs italic text-slate-500 mt-0.5">
                 {muscle?.latinName ??
                   organ?.latinName ??
                   diaphragm?.latinName ??
                   meridian?.chineseName ??
                   chain?.englishName ??
-                  neuro?.latinOrSubtitle}
+                  neuro?.latinOrSubtitle ??
+                  structuralElement?.latinName}
               </p>
             )}
           </div>
@@ -350,6 +388,7 @@ export const EntityInspector: React.FC<EntityInspectorProps> = ({
                 meridian?.name ??
                 chain?.name ??
                 neuro?.name ??
+                structuralElement?.name ??
                 acupoint?.russianName
               }
             />
@@ -365,47 +404,18 @@ export const EntityInspector: React.FC<EntityInspectorProps> = ({
           <>
             <section className="space-y-2.5">
               <h3 className="text-sm font-semibold text-slate-900">Анатомия и биомеханика</h3>
-              {muscleAnatomy && (
-                <div className="bg-slate-50 border border-slate-200 rounded-lg overflow-hidden">
-                  <div
-                    className="relative bg-white flex items-center justify-center p-2 cursor-zoom-in"
-                    onClick={() =>
-                      setImageZoom({
-                        src: muscleAnatomy.src,
-                        title: muscle.name,
-                        caption: `${muscleAnatomy.caption} (${muscleAnatomy.attribution})`,
-                      })
-                    }
-                  >
-                    <img
-                      src={muscleAnatomy.src}
-                      alt={muscleAnatomy.caption}
-                      className="max-h-44 w-full object-contain rounded"
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setImageZoom({
-                          src: muscleAnatomy.src,
-                          title: muscle.name,
-                          caption: `${muscleAnatomy.caption} (${muscleAnatomy.attribution})`,
-                        });
-                      }}
-                      className="absolute top-2 right-2 p-1.5 bg-white/95 hover:bg-white text-slate-700 border border-slate-200 rounded-md cursor-pointer"
-                      title="Увеличить анатомию мышцы"
-                    >
-                      <Maximize2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  <div className="px-3 py-1.5 border-t border-slate-200 flex items-center justify-between gap-2 text-[10px] text-slate-500">
-                    <span className="truncate font-medium text-slate-700">
-                      {muscleAnatomy.caption}
-                    </span>
-                    <span className="shrink-0">{muscleAnatomy.attribution}</span>
-                  </div>
-                </div>
-              )}
+              <DirectoryPhotoGallery
+                section="muscle"
+                itemId={muscle.id}
+                itemName={muscle.name}
+                defaultImageSrc={muscleAnatomy?.src}
+                defaultImageCaption={muscleAnatomy?.caption}
+                defaultImageAttribution={muscleAnatomy?.attribution}
+                defaultSlideLabel="Анатомия"
+                photoTitlePlaceholder="Например: Зона пальпации или укладка ММТ"
+                photoCaptionPlaceholder="Вектор теста, триггерная точка или клинический ориентир..."
+                vectorPresets={['Вектор теста ММТ', 'Фиксация', 'Триггер / ТЛ']}
+              />
               <dl className="grid grid-cols-1 gap-2 text-xs">
                 <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
                   <dt className="text-slate-500 mb-0.5">Начало и прикрепление</dt>
@@ -514,6 +524,20 @@ export const EntityInspector: React.FC<EntityInspectorProps> = ({
 
         {organ && (
           <section className="space-y-3 text-xs">
+            <DirectoryPhotoGallery
+              section="organ"
+              itemId={organ.id}
+              itemName={organ.name}
+              defaultImageSrc={organ.imageSrc ?? './anatomy/internal_organs.svg'}
+              defaultImageCaption={organ.imageCaption ?? organ.visceralMobility}
+              defaultImageAttribution={
+                organ.imageAttribution ?? 'Mikael Häggström · Internal organs, Wikimedia Commons (CC0)'
+              }
+              defaultSlideLabel="Анатомия"
+              photoTitlePlaceholder="Например: Висцеральная проекция или пальпация"
+              photoCaptionPlaceholder="Проекция органа, точка контакта или вектор лифтинга..."
+              vectorPresets={['Вектор лифтинга', 'Точка контакта', 'Фиксация']}
+            />
             <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
               <h3 className="text-sm font-semibold text-slate-900">
                 Висцеральная мобильность и механизм связи
@@ -538,6 +562,20 @@ export const EntityInspector: React.FC<EntityInspectorProps> = ({
 
         {diaphragm && (
           <section className="space-y-3 text-xs">
+            <DirectoryPhotoGallery
+              section="diaphragm"
+              itemId={diaphragm.id}
+              itemName={diaphragm.name}
+              defaultImageSrc={diaphragm.imageSrc ?? './anatomy/diaphragm.png'}
+              defaultImageCaption={diaphragm.imageCaption ?? diaphragm.anatomy}
+              defaultImageAttribution={
+                diaphragm.imageAttribution ?? 'Wikimedia Commons · Open Anatomical Atlas'
+              }
+              defaultSlideLabel="Анатомия"
+              photoTitlePlaceholder="Например: Укладка рук для релиза диафрагмы"
+              photoCaptionPlaceholder="Позиция рук, направление фасциальной тяги или дыхательный вектор..."
+              vectorPresets={['Вектор релиза', 'ТЛ-контакт', 'Направление тяги']}
+            />
             <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
               <h3 className="text-sm font-semibold text-slate-900">Анатомия и биомеханика</h3>
               <p className="text-slate-700 leading-relaxed">
@@ -719,6 +757,56 @@ export const EntityInspector: React.FC<EntityInspectorProps> = ({
           </section>
         )}
 
+        {structuralElement && (
+          <section className="space-y-3 text-xs">
+            <DirectoryPhotoGallery
+              section={structuralElement.kind}
+              itemId={structuralElement.id}
+              itemName={structuralElement.name}
+              defaultImageSrc={structuralElement.imageSrc}
+              defaultImageCaption={structuralElement.imageCaption ?? structuralElement.palpationLandmark}
+              defaultImageAttribution={structuralElement.imageAttribution}
+              defaultSlideLabel="Анатомия"
+              photoTitlePlaceholder="Например: Зона пальпации или вектор релиза"
+              photoCaptionPlaceholder="Анатомический ориентир, вектор тяги или клиническая пометка..."
+              vectorPresets={['Вектор релиза', 'Компрессия / блок', 'ТЛ-контакт']}
+            />
+
+            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+              <h3 className="text-sm font-semibold text-slate-900">
+                Анатомия, топография и биомеханика
+              </h3>
+              <p className="text-slate-700 leading-relaxed">
+                <strong>Строение и ход:</strong> {structuralElement.anatomyAndLocation}
+              </p>
+              <p className="text-slate-700 leading-relaxed">
+                <strong>Биомеханика и функция:</strong> {structuralElement.biomechanicsAndFunction}
+              </p>
+              <p className="text-slate-700 leading-relaxed pt-1 border-t border-slate-200">
+                <strong>Пальпаторный ориентир:</strong> {structuralElement.palpationLandmark}
+              </p>
+            </div>
+
+            <div className="p-3.5 bg-blue-50/60 border border-blue-200 rounded-lg space-y-1">
+              <h4 className="font-semibold text-blue-950">
+                ММТ-провокация и кинезиологическое тестирование
+              </h4>
+              <p className="text-blue-900 leading-relaxed">
+                {structuralElement.kinesiologyTestAndProvocation}
+              </p>
+            </div>
+
+            <div className="p-3.5 border border-slate-200 rounded-lg space-y-1.5">
+              <h4 className="font-semibold text-slate-900">Клинические признаки дисфункции</h4>
+              <ul className="list-disc pl-4 space-y-1 text-slate-700 leading-relaxed">
+                {structuralElement.dysfunctionSigns.map((sign, i) => (
+                  <li key={i}>{sign}</li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
+
         {/* ==================== 2. CROSS-REFERENCES MATRIX ==================== */}
         <section className="pt-4 border-t border-slate-200 space-y-3.5">
           <div>
@@ -729,6 +817,16 @@ export const EntityInspector: React.FC<EntityInspectorProps> = ({
               Нажмите на любую связанную структуру для мгновенного перехода и перестройки схемы
             </p>
           </div>
+
+          {muscle && (
+            <MuscleConnectionsGraph
+              muscle={muscle}
+              diaphragms={crossRefs.diaphragms}
+              meridians={crossRefs.meridians}
+              organs={crossRefs.organs}
+              onSelectEntity={onSelectEntity}
+            />
+          )}
 
           {/* Linked Myofascial Chains */}
           {crossRefs.chains.length > 0 && (
@@ -766,11 +864,27 @@ export const EntityInspector: React.FC<EntityInspectorProps> = ({
           {/* Linked Muscles */}
           {crossRefs.muscles.length > 0 && (
             <div>
-              <div className="text-[11px] font-medium text-slate-500 mb-1.5">
-                Связанные мышцы ({crossRefs.muscles.length})
+              <div className="text-[11px] font-medium text-slate-500 mb-1.5 flex items-center justify-between gap-2">
+                <span>Связанные мышцы ({crossRefs.muscles.length})</span>
+                {crossRefs.muscles.length > 10 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpandedCrossGroups((p) => ({ ...p, muscles: !p.muscles }))
+                    }
+                    className="text-blue-700 hover:underline cursor-pointer"
+                  >
+                    {expandedCrossGroups.muscles
+                      ? 'Свернуть до 10'
+                      : `Показать все (${crossRefs.muscles.length})`}
+                  </button>
+                )}
               </div>
               <div className="grid grid-cols-1 gap-1.5">
-                {crossRefs.muscles.map((item) => (
+                {(expandedCrossGroups.muscles
+                  ? crossRefs.muscles
+                  : crossRefs.muscles.slice(0, 10)
+                ).map((item) => (
                   <button
                     key={item.id}
                     type="button"
@@ -930,6 +1044,62 @@ export const EntityInspector: React.FC<EntityInspectorProps> = ({
               </div>
             </div>
           )}
+
+          {/* Linked Fasciae, Tendons, Joints, Bones, Vessels */}
+          {(
+            [
+              { key: 'fascias', label: 'Связанные фасции', list: crossRefs.fascias },
+              { key: 'tendons', label: 'Связанные сухожилия', list: crossRefs.tendons },
+              { key: 'joints', label: 'Связанные суставы', list: crossRefs.joints },
+              { key: 'bones', label: 'Кости и ориентиры', list: crossRefs.bones },
+              { key: 'vessels', label: 'Сосуды и лимфоколлекторы', list: crossRefs.vessels },
+            ] as const
+          )
+            .filter((grp) => grp.list.length > 0)
+            .map((grp) => {
+              const isExpanded = Boolean(expandedCrossGroups[grp.key]);
+              const visibleList = isExpanded ? grp.list : grp.list.slice(0, 10);
+              return (
+                <div key={grp.key}>
+                  <div className="text-[11px] font-medium text-slate-500 mb-1.5 flex items-center justify-between gap-2">
+                    <span>
+                      {grp.label} ({grp.list.length})
+                    </span>
+                    {grp.list.length > 10 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedCrossGroups((p) => ({ ...p, [grp.key]: !p[grp.key] }))
+                        }
+                        className="text-blue-700 hover:underline cursor-pointer"
+                      >
+                        {isExpanded ? 'Свернуть до 10' : `Показать все (${grp.list.length})`}
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    {visibleList.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => onSelectEntity({ type: item.kind, id: item.id })}
+                        className="flex items-center justify-between gap-2 px-3 py-2 text-left bg-white hover:bg-slate-50 border border-slate-200 hover:border-blue-300 rounded-lg transition-colors cursor-pointer group"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-xs font-medium text-slate-900 truncate">
+                            {item.name}
+                          </div>
+                          <div className="text-[11px] text-slate-500 truncate">
+                            {item.latinName} · {item.categoryLabel}
+                          </div>
+                        </div>
+                        <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-700 shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
         </section>
 
         {/* ==================== 2.5. MUDRAS & NOSODES IN ATLAS ==================== */}
@@ -1096,39 +1266,6 @@ export const EntityInspector: React.FC<EntityInspectorProps> = ({
           </div>
         </section>
       </div>
-
-      {imageZoom && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4"
-          onClick={() => setImageZoom(null)}
-        >
-          <div
-            className="bg-white border border-slate-200 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="px-5 py-3 border-b border-slate-200 flex items-center justify-between gap-4">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">{imageZoom.title}</h3>
-                <p className="text-xs text-slate-500">{imageZoom.caption}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setImageZoom(null)}
-                className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="p-5 bg-slate-50 flex justify-center">
-              <img
-                src={imageZoom.src}
-                alt={imageZoom.title}
-                className="max-h-[65vh] w-auto object-contain rounded-lg"
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -4,7 +4,7 @@ const LS_UPDATE_FEED_KEY = 'kinezioatlas_update_feed_url_v1';
 const LS_LAST_UPDATE_CHECK_KEY = 'kinezioatlas_last_update_check_v1';
 
 export function getCurrentAppVersion(): string {
-  return typeof __APP_VERSION__ !== 'undefined' && __APP_VERSION__ ? __APP_VERSION__ : '1.2.0';
+  return typeof __APP_VERSION__ !== 'undefined' && __APP_VERSION__ ? __APP_VERSION__ : '1.4.0';
 }
 
 export function getUpdateFeedUrl(): string {
@@ -229,6 +229,28 @@ function saveLastCheck(res: UpdateCheckResult): void {
   } catch {
     // ignore
   }
+}
+
+export function createSimulatedUpdateTestResult(): UpdateCheckResult {
+  const currentVersion = getCurrentAppVersion();
+  const parts = currentVersion
+    .replace(/^v/i, '')
+    .split('.')
+    .map((n) => parseInt(n, 10) || 0);
+  const nextPatch = `${parts[0] ?? 1}.${parts[1] ?? 3}.${(parts[2] ?? 0) + 1}`;
+  return {
+    status: 'remote-available',
+    currentVersion,
+    latestVersion: nextPatch,
+    checkedAt: new Date().toISOString(),
+    releaseDate: new Date().toISOString().slice(0, 10),
+    notes: [
+      `Тестовая симуляция проверки обновлений (сравнение Semver: ${currentVersion} → ${nextPatch}).`,
+      'Проверяет отображение уведомления, списка изменений, кнопки скачивания .dmg и напоминания о Backup.',
+      'В реальной работе этот же интерфейс срабатывает при публикации нового public/version.json или GitHub Release.',
+    ],
+    message: `Тест-режим: обнаружена новая версия ${nextPatch} (текущая ${currentVersion}).`,
+  };
 }
 
 export function getLastUpdateCheck(): UpdateCheckResult | null {

@@ -13,7 +13,12 @@ export type EntityType =
   | 'meridian'
   | 'acupoint'
   | 'chain'
-  | 'neuro';
+  | 'neuro'
+  | 'fascia'
+  | 'tendon'
+  | 'joint'
+  | 'bone'
+  | 'vessel';
 
 export interface SelectedEntity {
   type: EntityType;
@@ -127,6 +132,9 @@ export interface Organ {
   meridianIds: string[];
   correctionSteps: CorrectionStep[];
   svgCoords: { x: number; y: number };
+  imageSrc?: string;
+  imageCaption?: string;
+  imageAttribution?: string;
 }
 
 export interface Diaphragm {
@@ -143,6 +151,9 @@ export interface Diaphragm {
   meridianIds: string[];
   correctionSteps: CorrectionStep[];
   svgY: number;
+  imageSrc?: string;
+  imageCaption?: string;
+  imageAttribution?: string;
 }
 
 export type AcupointRole =
@@ -364,6 +375,10 @@ export type PainMarkerType = 'pain' | 'trigger_point' | 'weak_muscle';
 
 export type PainBodyView = 'anterior' | 'posterior';
 
+export type BodyPosturePosition = 'standing' | 'sitting' | 'lying';
+
+export type TriggerPostureBehavior = 'varies_with_posture' | 'constant_all_postures';
+
 export interface PainMapPoint {
   id: string;
   type: PainMarkerType;
@@ -373,11 +388,69 @@ export interface PainMapPoint {
   y: number;
   /** Pain / tenderness intensity (VAS 1..10) */
   intensity?: number;
+  /** Body posture in which the pain/trigger was localized */
+  posture?: BodyPosturePosition;
+  /** Whether trigger/pain changes across standing/sitting/lying or remains constant */
+  triggerBehavior?: TriggerPostureBehavior;
   zoneId: AnatomicalZoneId;
   matchedMuscleIds: string[];
   primaryMuscleId?: string;
   note?: string;
   createdAt: string;
+}
+
+export type PosturePhotoView = 'anterior' | 'posterior' | 'lateral_left' | 'lateral_right';
+
+export type PosturePhase = 'before' | 'after' | 'followup';
+
+export interface PostureLandmarkPoint {
+  id: string;
+  label: string;
+  shortLabel: string;
+  /** Normalized coordinates 0..100% on the uploaded patient photo */
+  x: number;
+  y: number;
+}
+
+export interface PostureCalibrationLine {
+  /** Laser plumb tilt relative to image vertical axis (degrees) */
+  verticalOffsetDeg: number;
+  plumbX1: number;
+  plumbY1: number;
+  plumbX2: number;
+  plumbY2: number;
+  horizonY?: number;
+  /** Image natural width / height ratio to preserve exact true-angle geometry */
+  aspectRatio?: number;
+}
+
+export interface PostureAngleMetric {
+  id: string;
+  label: string;
+  angleDeg: number;
+  absAngleDeg: number;
+  deviationDirection: string;
+  severity: 'normal' | 'mild' | 'significant';
+  targetRegion: AnatomicalZoneId;
+  attentionVector: string;
+  recommendedMuscleIds: string[];
+  recommendedChainIds: string[];
+}
+
+export interface PostureAssessmentRecord {
+  id: string;
+  patientId?: string;
+  visitId?: string;
+  phase: PosturePhase;
+  view: PosturePhotoView;
+  capturedAt: string;
+  photoDataUrl: string;
+  laserCalibration: PostureCalibrationLine;
+  landmarks: PostureLandmarkPoint[];
+  angles: PostureAngleMetric[];
+  summaryVector: string;
+  priorityMuscleIds: string[];
+  notes?: string;
 }
 
 export type ComplaintStageKey =
@@ -410,6 +483,7 @@ export interface PatientProfile {
   anamnesis?: string;
   painMap?: PainMapPoint[];
   complaintsTimeline?: PatientComplaintEvent[];
+  postureAssessments?: PostureAssessmentRecord[];
   createdAt: string;
   updatedAt: string;
 }
@@ -425,6 +499,7 @@ export interface PatientVisitRecord {
   muscleQueue: string[];
   mmtRecords: Record<string, MMTSessionRecord>;
   painMap?: PainMapPoint[];
+  postureAssessments?: PostureAssessmentRecord[];
   createdAt: string;
   updatedAt: string;
 }
@@ -465,7 +540,8 @@ export type LearningStageId =
   | 'stage-6-triad'
   | 'stage-7-neuro-posture'
   | 'stage-8-methods-tools'
-  | 'stage-9-cranio-patterns';
+  | 'stage-9-cranio-patterns'
+  | 'stage-10-structural-anatomy';
 
 export type LearningQuestionKind = 'new' | 'review' | 'connection';
 
@@ -679,7 +755,41 @@ export interface NeuroPhysiologyProfile {
   relatedMeridianIds: string[];
 }
 
+export type StructuralElementKind = 'fascia' | 'tendon' | 'joint' | 'bone' | 'vessel';
+
+export interface StructuralElementProfile {
+  id: string;
+  kind: StructuralElementKind;
+  name: string;
+  latinName: string;
+  zone: AnatomicalZoneId;
+  side: AnatomicalSide | 'both';
+  categoryLabel: string;
+  anatomyAndLocation: string;
+  biomechanicsAndFunction: string;
+  palpationLandmark: string;
+  dysfunctionSigns: string[];
+  kinesiologyTestAndProvocation: string;
+  correctionSteps: CorrectionStep[];
+  relatedMuscleIds: string[];
+  relatedOrganIds: string[];
+  relatedDiaphragmIds: string[];
+  relatedMeridianIds: string[];
+  relatedChainIds: string[];
+  svgCoords: {
+    view: 'anterior' | 'posterior';
+    x: number;
+    y: number;
+  };
+  imageSrc?: string;
+  imageCaption?: string;
+  imageAttribution?: string;
+}
+
 export type DirectoryMediaSection =
+  | 'muscle'
+  | 'organ'
+  | 'diaphragm'
   | 'mudra'
   | 'nosode'
   | 'taping'
@@ -689,7 +799,12 @@ export type DirectoryMediaSection =
   | 'protocol'
   | 'tests'
   | 'patterns'
-  | 'craniosacral';
+  | 'craniosacral'
+  | 'fascia'
+  | 'tendon'
+  | 'joint'
+  | 'bone'
+  | 'vessel';
 
 export interface DirectoryCustomPhoto {
   id: string;
@@ -797,7 +912,12 @@ export type EditableDirectorySection =
   | 'nosode'
   | 'taping'
   | 'trust'
-  | 'craniosacral';
+  | 'craniosacral'
+  | 'fascia'
+  | 'tendon'
+  | 'joint'
+  | 'bone'
+  | 'vessel';
 
 export interface DirectoryEntryOverride {
   key: string;

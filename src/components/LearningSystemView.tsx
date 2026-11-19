@@ -355,8 +355,8 @@ export const LearningSystemView: React.FC<LearningSystemViewProps> = ({
         </div>
       </div>
 
-      {/* 8-Stage Progression Rail (2 symmetric rows on desktop) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* 10-Stage Progression Rail (2 symmetric rows on desktop) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         {LEARNING_CURRICULUM.map((st) => {
           const isUnlocked = st.stepNumber <= progress.unlockedStep;
           const isActive = st.stepNumber === activeStage.stepNumber;
@@ -379,7 +379,7 @@ export const LearningSystemView: React.FC<LearningSystemViewProps> = ({
             >
               <div className="flex items-center justify-between gap-2 text-[11px] font-mono tabular-nums">
                 <span className={isActive ? 'text-blue-100' : 'text-slate-500'}>
-                  Этап 0{st.stepNumber}
+                  Этап {String(st.stepNumber).padStart(2, '0')}
                 </span>
                 {!isUnlocked ? (
                   <Lock className="w-3.5 h-3.5 text-slate-400" />

@@ -546,15 +546,76 @@ const MUSCLE_PLATE_SPECS: Record<string, MuscleAtlasPlateSpec> = {
   },
 };
 
-const DEFAULT_PLATE_SPEC: MuscleAtlasPlateSpec = {
-  plateSrc: './anatomy/mmt/openstax_pelvis_thigh.png',
-  plateTitle: 'Анатомический регион скелетной мускулатуры',
-  xPct: 50,
-  yPct: 50,
-  pressureAngleDeg: 90,
-  patientAngleDeg: -90,
-  poseSummary: 'Изолированная укладка тестируемого сегмента',
-};
+function resolveMusclePlateSpec(muscle: Muscle): MuscleAtlasPlateSpec {
+  if (MUSCLE_PLATE_SPECS[muscle.id]) {
+    return MUSCLE_PLATE_SPECS[muscle.id];
+  }
+  const hay = `${muscle.id} ${muscle.name} ${muscle.latinName}`.toLowerCase();
+  let plateSrc = './anatomy/mmt/openstax_pelvis_thigh.png';
+  let plateTitle = 'Анатомический регион скелетной мускулатуры';
+  if (muscle.zone === 'head') {
+    plateSrc = './anatomy/mmt/openstax_head_chewing.png';
+    plateTitle = 'Мускулатура головы, мимического и жевательного комплекса';
+  } else if (muscle.zone === 'cervical') {
+    plateSrc =
+      hay.includes('задн') || hay.includes('подзатылоч') || hay.includes('ременн') || hay.includes('выйн')
+        ? './anatomy/mmt/openstax_neck_back.png'
+        : hay.includes('лестнич')
+        ? './anatomy/mmt/openstax_neck_lateral.png'
+        : './anatomy/mmt/openstax_neck_front.png';
+    plateTitle = 'Анатомический регион мышц шеи';
+  } else if (muscle.zone === 'upper-limb') {
+    plateSrc =
+      hay.includes('предплеч') ||
+      hay.includes('кист') ||
+      hay.includes('пальц') ||
+      hay.includes('запяст') ||
+      hay.includes('ладон') ||
+      hay.includes('червеобраз') ||
+      hay.includes('межкостн')
+        ? './anatomy/mmt/openstax_forearm.png'
+        : './anatomy/mmt/openstax_upper_limb.png';
+    plateTitle = 'Мышцы верхней конечности (плечо, предплечье, кисть)';
+  } else if (muscle.zone === 'thoracic') {
+    plateSrc =
+      hay.includes('спин') ||
+      hay.includes('лопат') ||
+      hay.includes('ромб') ||
+      hay.includes('остист') ||
+      hay.includes('длиннейш') ||
+      hay.includes('многораздел') ||
+      hay.includes('вращател')
+        ? './anatomy/mmt/openstax_pectoral_girdle.png'
+        : './anatomy/mmt/openstax_thorax.png';
+    plateTitle = 'Мышцы грудного отдела и плечевого пояса';
+  } else if (muscle.zone === 'lumbar') {
+    plateSrc =
+      hay.includes('промеж') || hay.includes('тазов') || hay.includes('сфинктер') || hay.includes('задний проход')
+        ? './anatomy/mmt/openstax_pelvic_floor.png'
+        : hay.includes('ягодич') || hay.includes('запирател') || hay.includes('близнецов')
+        ? './anatomy/mmt/openstax_pelvis_thigh.png'
+        : './anatomy/mmt/openstax_abdomen.png';
+    plateTitle = 'Мышцы брюшной стенки, поясницы и таза';
+  } else if (muscle.zone === 'lower-limb') {
+    plateSrc =
+      hay.includes('стоп') || hay.includes('подошв') || hay.includes('плюсн')
+        ? './anatomy/mmt/openstax_foot.png'
+        : hay.includes('голен') || hay.includes('малоберц') || hay.includes('камбалов') || hay.includes('большеберц')
+        ? './anatomy/mmt/openstax_lower_leg.png'
+        : './anatomy/mmt/openstax_pelvis_thigh.png';
+    plateTitle = 'Мышцы нижней конечности (бедро, голень, стопа)';
+  }
+
+  return {
+    plateSrc,
+    plateTitle,
+    xPct: 50,
+    yPct: 48,
+    pressureAngleDeg: 90,
+    patientAngleDeg: -90,
+    poseSummary: `${muscle.mmt.patientPosition}. ${muscle.mmt.pressureVector}`,
+  };
+}
 
 const QUICK_VECTOR_LABELS = [
   'Давление врача',
@@ -572,7 +633,7 @@ interface MMTSchematicDiagramProps {
 }
 
 export const MMTSchematicDiagram: React.FC<MMTSchematicDiagramProps> = ({ muscle }) => {
-  const spec = MUSCLE_PLATE_SPECS[muscle.id] ?? DEFAULT_PLATE_SPEC;
+  const spec = useMemo(() => resolveMusclePlateSpec(muscle), [muscle]);
 
   const [customPhotos, setCustomPhotos] = useState<MMTCustomPhoto[]>([]);
   const [builtinPhotoArrows, setBuiltinPhotoArrows] = useState<MMTVectorArrow[]>([]);
