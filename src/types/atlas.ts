@@ -997,6 +997,9 @@ export interface AppVersionManifest {
   releaseDate: string;
   notes: string[];
   dmgUrl?: string;
+  dmgArm64Url?: string;
+  dmgX64Url?: string;
+  dmgUniversalUrl?: string;
   zipUrl?: string;
   releasesPageUrl?: string;
 }

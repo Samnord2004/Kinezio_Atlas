@@ -9,7 +9,12 @@
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
     "build:electron": "VITE_ELECTRON=1 vite build",
-    "dist:mac": "VITE_ELECTRON=1 vite build && npx --yes electron-builder@25.1.8 --mac dmg zip",
+    "dist:mac": "VITE_ELECTRON=1 vite build && npx --yes electron-builder@25.1.8 --mac dmg zip --arm64 --x64 --universal",
+    "dist:mac:arm64": "VITE_ELECTRON=1 vite build && npx --yes electron-builder@25.1.8 --mac dmg zip --arm64",
+    "dist:mac:x64": "VITE_ELECTRON=1 vite build && npx --yes electron-builder@25.1.8 --mac dmg zip --x64",
+    "dist:mac:universal": "VITE_ELECTRON=1 vite build && npx --yes electron-builder@25.1.8 --mac dmg zip --universal",
+    "dist:win": "VITE_ELECTRON=1 vite build && npx --yes electron-builder@25.1.8 --win nsis zip --x64 --arm64",
+    "dist:linux": "VITE_ELECTRON=1 vite build && npx --yes electron-builder@25.1.8 --linux AppImage deb --x64 --arm64",
     "electron:start": "VITE_ELECTRON=1 vite build && npx --yes electron@35.0.0 .",
     "preview": "vite preview --host 0.0.0.0 --port 3000",
     "serve:local": "vite build && vite preview --host 0.0.0.0 --port 3000",
@@ -20,6 +25,7 @@
     "appId": "com.kinezioatlas.desktop",
     "productName": "КинезиоАтлас",
     "electronVersion": "35.0.0",
+    "afterSign": "build/afterSign.cjs",
     "directories": {
       "output": "release",
       "buildResources": "build"
@@ -30,7 +36,9 @@
     ],
     "mac": {
       "category": "public.app-category.medical",
+      "minimumSystemVersion": "11.0",
       "icon": "public/pwa-512x512.png",
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
@@ -40,18 +48,8 @@
         "NSSpeechRecognitionUsageDescription": "КинезиоАтлас использует распознавание речи для заполнения карты боли и шкалы жалоб."
       },
       "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "universal"
-          ]
-        },
-        {
-          "target": "zip",
-          "arch": [
-            "universal"
-          ]
-        }
+        "dmg",
+        "zip"
       ]
     },
     "dmg": {
@@ -72,6 +70,27 @@
           "type": "link",
           "path": "/Applications"
         }
+      ]
+    },
+    "win": {
+      "icon": "public/pwa-512x512.png",
+      "artifactName": "${productName}-${version}-win-${arch}.${ext}",
+      "target": [
+        "nsis",
+        "zip"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "linux": {
+      "icon": "public/pwa-512x512.png",
+      "category": "MedicalSoftware",
+      "artifactName": "${productName}-${version}-linux-${arch}.${ext}",
+      "target": [
+        "AppImage",
+        "deb"
       ]
     }
   },

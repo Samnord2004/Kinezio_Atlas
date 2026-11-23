@@ -8,6 +8,8 @@ interface KinezioDesktopBridge {
   getEnvironment: () => Promise<{
     platform: string;
     arch: string;
+    runningUnderARM64Translation?: boolean;
+    osRelease?: string;
     appVersion: string;
     userDataPath: string;
     machineLabel: string;
@@ -31,6 +33,9 @@ interface KinezioDesktopBridge {
       releaseDate?: string;
       notes?: string[];
       dmgUrl?: string;
+      dmgArm64Url?: string;
+      dmgX64Url?: string;
+      dmgUniversalUrl?: string;
       zipUrl?: string;
       releasesPageUrl?: string;
     };

@@ -77,25 +77,43 @@ export type ModalTab = 'storage' | 'cloud' | 'updates' | 'macos';
 const MAC_COMMANDS = [
   {
     id: 'dist-mac',
-    title: '1. Сборка готового установщика .dmg для macOS (Apple Silicon + Intel)',
-    desc: 'Собирает production-бандл с относительными путями (VITE_ELECTRON=1) и упаковывает приложение в КинезиоАтлас-1.4.0-universal.dmg в папке release/. Запускается в Терминале на macOS.',
+    title: '1. Полная сборка .dmg для всех Mac (Apple Silicon M1+ и Intel)',
+    desc: 'Собирает 3 отдельных установщика в папку release/: нативный arm64 (M1, M2, M3, M4 и новее), x64 (Intel) и universal (2-в-1), с автоматической ad-hoc подписью для запуска на M1+.',
     cmd: 'npm install && npm run dist:mac',
   },
   {
+    id: 'dist-mac-arm64',
+    title: '2. Быстрая нативная сборка для Apple Silicon (M1, M2, M3, M4 и новее)',
+    desc: 'Создаёт облегчённый нативный установщик КинезиоАтлас-1.4.0-arm64.dmg (~в 2 раза меньше universal) без эмуляции Rosetta 2.',
+    cmd: 'npm install && npm run dist:mac:arm64',
+  },
+  {
+    id: 'dist-mac-x64',
+    title: '3. Сборка для процессоров Intel (более старые Mac, x86_64)',
+    desc: 'Создаёт установщик КинезиоАтлас-1.4.0-x64.dmg специально для компьютеров Mac на процессорах Intel.',
+    cmd: 'npm install && npm run dist:mac:x64',
+  },
+  {
+    id: 'dist-win-linux',
+    title: '4. Сборка для Windows и Linux (x64 + ARM64)',
+    desc: 'Упаковывает установщики для Windows (.exe / .zip) или Linux (.AppImage / .deb) под процессоры x64 и ARM64.',
+    cmd: 'npm run dist:win   # или: npm run dist:linux',
+  },
+  {
     id: 'electron-start',
-    title: '2. Прямой тестовый запуск настольного окна Electron на Mac',
+    title: '5. Прямой тестовый запуск настольного окна Electron на текущем ПК',
     desc: 'Быстрая проверка настольного режима (с нативным доступом к папкам диска, зеркальным копиям и Finder) без упаковки в .dmg.',
     cmd: 'npm install && npm run electron:start',
   },
   {
     id: 'build-serve',
-    title: '3. Локальный запуск браузерной версии с PWA и офлайн-кэшем',
+    title: '6. Локальный запуск браузерной версии с PWA и офлайн-кэшем',
     desc: 'Собирает все таблицы, шрифты и Service Worker в папку dist и поднимает локальный сервер на 0.0.0.0:3000.',
     cmd: 'npm install && npm run serve:local',
   },
   {
     id: 'cloudflared',
-    title: '4. Внешний HTTPS-туннель через Cloudflare (для телефона / удалённого ПК)',
+    title: '7. Внешний HTTPS-туннель через Cloudflare (для телефона / удалённого ПК)',
     desc: 'Выдаёт защищённую внешнюю ссылку https://*.trycloudflare.com без настройки роутера.',
     cmd: 'cloudflared tunnel --url http://localhost:3000',
   },
@@ -139,6 +157,11 @@ export const LocalHostingModal: React.FC<LocalHostingModalProps> = ({
   const [detectedCloudFolders, setDetectedCloudFolders] = useState<
     Array<{ provider: 'yandex' | 'google'; label: string; path: string }>
   >([]);
+  const [desktopEnv, setDesktopEnv] = useState<{
+    platform: string;
+    arch: string;
+    runningUnderARM64Translation?: boolean;
+  } | null>(null);
   const [confirmRestoreName, setConfirmRestoreName] = useState<string | null>(null);
 
   // Preview & Import state
@@ -173,6 +196,16 @@ export const LocalHostingModal: React.FC<LocalHostingModalProps> = ({
   const fsSupported = isBrowserFsAccessSupported();
   const appVersion = getCurrentAppVersion();
 
+  const cpuArchitectureLabel = desktopEnv
+    ? desktopEnv.platform === 'darwin'
+      ? desktopEnv.arch === 'arm64'
+        ? 'Apple Silicon (M1 / M2 / M3 / M4 · arm64)'
+        : desktopEnv.runningUnderARM64Translation
+        ? 'Intel x64 через Rosetta 2 (для M1+ доступна нативная arm64)'
+        : 'Intel Mac (x86_64)'
+      : `${desktopEnv.platform} (${desktopEnv.arch})`
+    : null;
+
   useEffect(() => {
     if (isOpen) {
       setActiveTab(initialTab);
@@ -198,6 +231,11 @@ export const LocalHostingModal: React.FC<LocalHostingModalProps> = ({
     if (window.kinezioDesktop) {
       const env = await window.kinezioDesktop.getEnvironment();
       setDetectedCloudFolders(env.detectedCloudFolders ?? []);
+      setDesktopEnv({
+        platform: env.platform,
+        arch: env.arch,
+        runningUnderARM64Translation: env.runningUnderARM64Translation,
+      });
     }
   }, []);
 
@@ -1050,7 +1088,8 @@ export const LocalHostingModal: React.FC<LocalHostingModalProps> = ({
                     КинезиоАтлас v{appVersion}
                   </div>
                   <div className="text-xs text-slate-600 mt-0.5">
-                    Канал: {isElectron ? 'Настольное приложение macOS (Electron)' : 'Веб / PWA с Service Worker'}
+                    Канал: {isElectron ? 'Настольное приложение (Electron)' : 'Веб / PWA с Service Worker'}
+                    {cpuArchitectureLabel && <> · Процессор: {cpuArchitectureLabel}</>}
                   </div>
                 </div>
 
@@ -1256,9 +1295,9 @@ export const LocalHostingModal: React.FC<LocalHostingModalProps> = ({
                   </li>
                   <li>
                     <strong>Шаг 3. Обновление настольной версии macOS (.dmg):</strong> выполните в папке проекта{' '}
-                    <code>npm run dist:mac</code> (или скачайте готовый <code>КинезиоАтлас-1.4.0-universal.dmg</code>),
-                    откройте образ (кнопка «Установить из .dmg / .zip») и перетащите приложение в «Программы» с
-                    заменой.
+                    <code>npm run dist:mac</code> (соберёт <code>КинезиоАтлас-1.4.0-arm64.dmg</code> для
+                    M1/M2/M3/M4, <code>-x64.dmg</code> для Intel и <code>-universal.dmg</code>), откройте
+                    образ (кнопка «Установить из .dmg / .zip») и перетащите приложение в «Программы» с заменой.
                   </li>
                   <li>
                     <strong>Шаг 4. Обновление локальной папки / Веб-PWA:</strong> замените файлы проекта,
@@ -1275,16 +1314,23 @@ export const LocalHostingModal: React.FC<LocalHostingModalProps> = ({
             <div className="space-y-4">
               <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-xl flex items-start gap-2.5 text-amber-950 leading-relaxed">
                 <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                <div>
-                  <strong>Важно о сборке файла .dmg для macOS:</strong> формирование бинарного
-                  образа диска Apple (<code>.dmg</code>) требует системной утилиты macOS{' '}
-                  <code>hdiutil</code>, поэтому финальный файл <code>.dmg</code> собирается
-                  непосредственно на компьютере Mac (командой <code>npm run dist:mac</code>) либо
-                  автоматически в GitHub Actions на раннере <code>macos-14</code> (файл{' '}
-                  <code>.github/workflows/build-macos-dmg.yml</code> уже подготовлен в проекте).
-                  Конфигурация Electron (<code>electron/main.cjs</code>,{' '}
-                  <code>electron/preload.cjs</code>, <code>build/entitlements.mac.plist</code> и{' '}
-                  <code>electron-builder</code>) полностью настроена.
+                <div className="space-y-1.5">
+                  <div>
+                    <strong>Совместимость с процессорами Apple Silicon (M1, M2, M3, M4 и новее) и Intel:</strong>{' '}
+                    конфигурация сборки (<code>package.json</code>, <code>build/afterSign.cjs</code>,{' '}
+                    <code>build/entitlements.mac.plist</code>) адаптирована под нативный <code>arm64</code>,
+                    классический <code>x64</code> и <code>universal</code>, а также Windows/Linux (<code>x64</code> + <code>arm64</code>).
+                    В проект добавлена автоматическая ad-hoc подпись <code>afterSign.cjs</code> с правами JIT/WASM и микрофона,
+                    необходимая для запуска на процессорах M1+ без платного Apple Developer ID.
+                  </div>
+                  <div>
+                    <strong>Важно о сборке файла .dmg:</strong> формирование образа диска Apple (<code>.dmg</code>)
+                    требует утилиты macOS <code>hdiutil</code> (macOS 11 Big Sur и выше), поэтому сборка запускается
+                    на Mac (<code>npm run dist:mac</code>) либо в GitHub Actions на раннере <code>macos-14</code> (файл{' '}
+                    <code>.github/workflows/build-macos-dmg.yml</code>). Если после скачивания из сети macOS Gatekeeper
+                    показывает предупреждение, откройте приложение через «Системные настройки → Конфиденциальность и безопасность → Открыть всё равно»
+                    или выполните <code>xattr -cr /Applications/КинезиоАтлас.app</code>.
+                  </div>
                 </div>
               </div>
 
@@ -1375,6 +1421,9 @@ export const LocalHostingModal: React.FC<LocalHostingModalProps> = ({
                         'Этап 10 обучения, офлайн-распознавание речи (Whisper) для macOS, поэтапный Анамнез и фото-анализ углов',
                       ],
                       dmgUrl: '',
+                      dmgArm64Url: '',
+                      dmgX64Url: '',
+                      dmgUniversalUrl: '',
                       zipUrl: '',
                       releasesPageUrl: '',
                     },

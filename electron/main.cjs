@@ -203,6 +203,8 @@ ipcMain.handle('kinezio:get-environment', async () => {
   return {
     platform: process.platform,
     arch: process.arch,
+    runningUnderARM64Translation: Boolean(app.runningUnderARM64Translation),
+    osRelease: os.release(),
     appVersion: app.getVersion(),
     userDataPath: app.getPath('userData'),
     machineLabel: os.hostname() || 'Mac-кабинет',
@@ -375,9 +377,14 @@ ipcMain.handle('kinezio:check-updates', async (_event, feedUrl) => {
 ipcMain.handle('kinezio:open-update-package', async (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   const res = await dialog.showOpenDialog(win, {
-    title: 'Выберите скачанный установщик КинезиоАтлас (.dmg / .zip / .pkg)',
+    title: 'Выберите скачанный установщик КинезиоАтлас (.dmg / .zip / .exe)',
     defaultPath: app.getPath('downloads'),
-    filters: [{ name: 'Установщик обновления', extensions: ['dmg', 'zip', 'pkg'] }],
+    filters: [
+      {
+        name: 'Установщик обновления',
+        extensions: ['dmg', 'zip', 'pkg', 'exe', 'msi', 'AppImage', 'deb'],
+      },
+    ],
     properties: ['openFile'],
   });
   if (res.canceled || !res.filePaths || res.filePaths.length === 0) {

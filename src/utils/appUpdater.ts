@@ -7,6 +7,49 @@ export function getCurrentAppVersion(): string {
   return typeof __APP_VERSION__ !== 'undefined' && __APP_VERSION__ ? __APP_VERSION__ : '1.4.0';
 }
 
+async function resolveDownloadUrlForCurrentArch(
+  manifest: Partial<AppVersionManifest>
+): Promise<string | undefined> {
+  let arch: string | undefined;
+  let underRosetta = false;
+  if (typeof window !== 'undefined' && window.kinezioDesktop?.getEnvironment) {
+    try {
+      const env = await window.kinezioDesktop.getEnvironment();
+      arch = env.arch;
+      underRosetta = Boolean(env.runningUnderARM64Translation);
+    } catch {
+      // ignore
+    }
+  }
+
+  if (arch === 'arm64' || underRosetta) {
+    return (
+      manifest.dmgArm64Url ||
+      manifest.dmgUniversalUrl ||
+      manifest.dmgUrl ||
+      manifest.zipUrl ||
+      manifest.releasesPageUrl
+    );
+  }
+  if (arch === 'x64') {
+    return (
+      manifest.dmgX64Url ||
+      manifest.dmgUniversalUrl ||
+      manifest.dmgUrl ||
+      manifest.zipUrl ||
+      manifest.releasesPageUrl
+    );
+  }
+  return (
+    manifest.dmgUniversalUrl ||
+    manifest.dmgUrl ||
+    manifest.dmgArm64Url ||
+    manifest.dmgX64Url ||
+    manifest.zipUrl ||
+    manifest.releasesPageUrl
+  );
+}
+
 export function getUpdateFeedUrl(): string {
   if (typeof localStorage === 'undefined') return './version.json';
   return localStorage.getItem(LS_UPDATE_FEED_KEY) || './version.json';
@@ -137,10 +180,7 @@ export async function checkForAppUpdates(customFeedUrl?: string): Promise<Update
           checkedAt,
           releaseDate: electronRes.manifest.releaseDate,
           notes: electronRes.manifest.notes,
-          downloadUrl:
-            electronRes.manifest.dmgUrl ||
-            electronRes.manifest.zipUrl ||
-            electronRes.manifest.releasesPageUrl,
+          downloadUrl: await resolveDownloadUrlForCurrentArch(electronRes.manifest),
           message:
             cmp > 0
               ? `Доступна новая версия ${remoteVer} (текущая ${currentVersion}).`
@@ -175,7 +215,7 @@ export async function checkForAppUpdates(customFeedUrl?: string): Promise<Update
       checkedAt,
       releaseDate: manifest.releaseDate,
       notes: Array.isArray(manifest.notes) ? manifest.notes : undefined,
-      downloadUrl: manifest.dmgUrl || manifest.zipUrl || manifest.releasesPageUrl,
+      downloadUrl: await resolveDownloadUrlForCurrentArch(manifest),
       message:
         cmp > 0
           ? `Доступна новая версия ${manifest.version} (текущая ${currentVersion}).`
@@ -214,7 +254,13 @@ export function validateOfflineUpdateManifest(jsonText: string): UpdateCheckResu
     checkedAt,
     releaseDate: manifest.releaseDate,
     notes: Array.isArray(manifest.notes) ? manifest.notes : undefined,
-    downloadUrl: manifest.dmgUrl || manifest.zipUrl || manifest.releasesPageUrl,
+    downloadUrl:
+      manifest.dmgUniversalUrl ||
+      manifest.dmgUrl ||
+      manifest.dmgArm64Url ||
+      manifest.dmgX64Url ||
+      manifest.zipUrl ||
+      manifest.releasesPageUrl,
     message:
       cmp > 0
         ? `Обнаружен пакет версии ${manifest.version} (новее текущей ${currentVersion}).`
